@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Landing Page - Indradhanu Analytics</title>
+    <style>
+        /* Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        /* Header Styles - Fixed Navigation */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c5aa0;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        .nav-links a:hover {
+            color: #2c5aa0;
+        }
+
+        /* Hero Section - Full Viewport with Video Background */
+        .hero {
+            position: relative;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .hero-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -2;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: -1;
+        }
+
+        .hero-content {
+            text-align: center;
+            color: white;
+            max-width: 800px;
+            padding: 0 2rem;
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .cta-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #2c5aa0;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: background 0.3s ease;
+        }
+
+        .cta-button:hover {
+            background: #1e3f73;
+        }
+
+        /* Main Content - Feature Blocks */
+        main {
+            padding: 4rem 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .features-section {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .feature-block {
+            padding: 2rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .feature-block:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .feature-block h2 {
+            color: #2c5aa0;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+        }
+
+        .feature-block p {
+            color: #666;
+            line-height: 1.8;
+        }
+
+        .feature-block ul {
+            color: #666;
+            padding-left: 1.5rem;
+        }
+
+        .feature-block li {
+            margin-bottom: 0.5rem;
+        }
+
+        /* Footer Styles */
+        footer {
+            background: #111;
+            color: #fff;
+            padding: 2rem;
+        }
+
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .social-icons a {
+            color: #fff;
+            font-size: 1.2rem;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .social-icons a:hover {
+            color: #2c5aa0;
+        }
+
+        .footer-text {
+            text-align: center;
+        }
+
+        .footer-links {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .footer-links a {
+            color: #ccc;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .footer-links a:hover {
+            color: #fff;
+        }
+
+        /* Responsive Design - Mobile First Approach */
+        @media (max-width: 768px) {
+            /* Navigation - Stack vertically on mobile */
+            nav {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1rem;
+            }
+
+            .nav-links {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            /* Hero Section - Adjust text size */
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            /* Features - Single column layout */
+            .features-section {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+
+            .feature-block {
+                padding: 1.5rem;
+            }
+
+            /* Footer - Stack vertically */
+            .footer-content {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .footer-links {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            /* Extra small screens */
+            .hero h1 {
+                font-size: 2rem;
+            }
+
+            main {
+                padding: 2rem 1rem;
+            }
+
+            .feature-block {
+                padding: 1rem;
+            }
+        }
+
+        /* Smooth scrolling for anchor links */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Loading animation for video */
+        .hero-video {
+            opacity: 0;
+            animation: fadeIn 2s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Upload Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 1rem;
+            top: 1rem;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .upload-area {
+            border: 2px dashed #2c5aa0;
+            border-radius: 10px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem 0;
+            background: #f8f9fa;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: #1e3f73;
+            background: #e9ecef;
+        }
+
+        .upload-area.dragover {
+            border-color: #1e3f73;
+            background: #e3f2fd;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-button {
+            background: #2c5aa0;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-top: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .upload-button:hover {
+            background: #1e3f73;
+        }
+
+        .upload-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* Results Section */
+        .results-section {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .results-stats {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 0.75rem 1rem;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            min-width: 80px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2c5aa0;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .chart-container img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .chart-title {
+            padding: 0.75rem;
+            background: #2c5aa0;
+            color: white;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .insights-section {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .insights-section h3 {
+            color: #2c5aa0;
+            margin-bottom: 1rem;
+        }
+
+        .insights-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .insights-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .insights-list li:last-child {
+            border-bottom: none;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+        }
+
+        .loading::after {
+            content: '';
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #2c5aa0;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section with Navigation -->
+    <header>
+        <nav>
+            <!-- Logo/Brand -->
+            <a href="#" class="logo">🌍 Indradhanu Analytics</a>
+            
+            <!-- Navigation Links -->
+            <ul class="nav-links">
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#" onclick="openUploadModal()">Upload Data</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Hero Section with Video Background -->
+    <section class="hero" id="home">
+        <!-- Background Video -->
+        <video class="hero-video" autoplay muted loop>
+            <!-- Placeholder for video sources - replace with actual video files -->
+            <source src="background-video.mp4" type="video/mp4">
+            <source src="background-video.webm" type="video/webm">
+            <!-- Fallback for browsers that don't support video -->
+            Your browser does not support the video tag.
+        </video>
+        
+        <!-- Dark overlay for text readability -->
+        <div class="hero-overlay"></div>
+        
+        <!-- Hero Content -->
+        <div class="hero-content">
+            <h1>Environmental Data Analytics</h1>
+            <p>Transform your environmental data into actionable insights with our powerful analytics engine. Upload, analyze, and visualize climate data effortlessly.</p>
+            <button class="cta-button" onclick="openUploadModal()">Start Analyzing</button>
+        </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <main>
+        <!-- Features Section with Two-Column Layout -->
+        <section class="features-section" id="features">
+            <!-- Mission Block -->
+            <div class="feature-block">
+                <h2>Our Mission</h2>
+                <p>We're dedicated to making environmental data analysis accessible and actionable. Our platform empowers researchers, organizations, and individuals to understand climate patterns and make data-driven decisions for a sustainable future.</p>
+            </div>
+
+            <!-- Key Features Block -->
+            <div class="feature-block">
+                <h2>Key Features</h2>
+                <ul>
+                    <li>Multi-format data support (CSV, XLSX, JSON)</li>
+                    <li>Automated data cleaning and preprocessing</li>
+                    <li>Interactive visualizations and charts</li>
+                    <li>AI-powered insights generation</li>
+                    <li>Real-time analytics processing</li>
+                </ul>
+            </div>
+
+            <!-- Data Processing Block -->
+            <div class="feature-block">
+                <h2>Advanced Analytics</h2>
+                <p>Our analytics engine processes environmental data using cutting-edge algorithms to identify trends, correlations, and anomalies. Get comprehensive reports with statistical analysis, correlation matrices, and predictive insights.</p>
+            </div>
+
+            <!-- Easy Integration Block -->
+            <div class="feature-block">
+                <h2>Easy Integration</h2>
+                <p>Simple REST API integration allows you to connect our analytics engine to your existing systems. Upload data programmatically and receive structured JSON responses with charts and insights ready for your applications.</p>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about">
+            <div class="feature-block">
+                <h2>About Indradhanu Analytics</h2>
+                <p>Indradhanu Analytics is a comprehensive environmental data analysis platform designed to bridge the gap between raw climate data and actionable insights. Whether you're monitoring air quality, tracking temperature patterns, or analyzing humidity trends, our platform provides the tools you need to make informed decisions.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer Section -->
+    <footer id="contact">
+        <div class="footer-content">
+            <!-- Social Media Icons -->
+            <div class="social-icons">
+                <a href="#" aria-label="Facebook">📘</a>
+                <a href="#" aria-label="Twitter">🐦</a>
+                <a href="#" aria-label="LinkedIn">💼</a>
+                <a href="#" aria-label="GitHub">🐙</a>
+            </div>
+
+            <!-- Footer Text -->
+            <div class="footer-text">
+                <p>&copy; 2025 Indradhanu Analytics. All rights reserved.</p>
+            </div>
+
+            <!-- Footer Links -->
+            <div class="footer-links">
+                <a href="#">Privacy Policy</a>
+                <a href="#">Terms of Service</a>
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Upload Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeUploadModal()">&times;</span>
+            <h2>Upload Environmental Data</h2>
+            <p>Upload your CSV, XLSX, or JSON file to get instant analytics and insights.</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <p>📁 Drag and drop your file here or click to browse</p>
+                <input type="file" id="fileInput" class="file-input" accept=".csv,.xlsx,.json">
+                <button type="button" class="upload-button" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+            </div>
+            
+            <div id="selectedFile" style="margin: 1rem 0; display: none;">
+                <p><strong>Selected:</strong> <span id="fileName"></span></p>
+                <button id="analyzeBtn" class="upload-button" onclick="uploadAndAnalyze()">
+                    🚀 Upload & Analyze
+                </button>
+            </div>
+
+            <!-- Results Section -->
+            <div id="resultsSection" class="results-section">
+                <div id="loadingState" class="loading">
+                    Analyzing your data, please wait...
+                </div>
+                <div id="resultsContent" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedFile = null;
+        const API_BASE_URL = 'http://127.0.0.1:5000';
+
+        // Initialize page functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeNavigation();
+            initializeFileUpload();
+        });
+
+        // Navigation and scroll effects
+        function initializeNavigation() {
+            // Smooth scrolling for navigation links
+            const navLinks = document.querySelectorAll('.nav-links a[href^="#"]');
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetSection = document.querySelector(targetId);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+
+            // Add scroll effect to header
+            window.addEventListener('scroll', function() {
+                const header = document.querySelector('header');
+                if (window.scrollY > 100) {
+                    header.style.background = 'rgba(255, 255, 255, 0.98)';
+                } else {
+                    header.style.background = 'rgba(255, 255, 255, 0.95)';
+                }
+            });
+        }
+
+        // File upload functionality
+        function initializeFileUpload() {
+            const fileInput = document.getElementById('fileInput');
+            const uploadArea = document.getElementById('uploadArea');
+            const selectedFileDiv = document.getElementById('selectedFile');
+            const fileName = document.getElementById('fileName');
+
+            // File input change event
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    handleFileSelection(file);
+                }
+            });
+
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                uploadArea.classList.add('dragover');
+            });
+
+            uploadArea.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+            });
+
+            uploadArea.addEventListener('drop', function(e) {
+                e.preventDefault();
+                uploadArea.classList.remove('dragover');
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    handleFileSelection(file);
+                }
+            });
+
+            // Click to upload
+            uploadArea.addEventListener('click', function() {
+                fileInput.click();
+            });
+        }
+
+        // Handle file selection
+        function handleFileSelection(file) {
+            const allowedTypes = ['.csv', '.xlsx', '.json'];
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            
+            if (!allowedTypes.includes(fileExtension)) {
+                alert('Please select a CSV, XLSX, or JSON file.');
+                return;
+            }
+
+            selectedFile = file;
+            document.getElementById('fileName').textContent = file.name;
+            document.getElementById('selectedFile').style.display = 'block';
+        }
+
+        // Modal functions
+        function openUploadModal() {
+            document.getElementById('uploadModal').style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeUploadModal() {
+            document.getElementById('uploadModal').style.display = 'none';
+            document.body.style.overflow = 'auto';
+            resetUploadForm();
+        }
+
+        function resetUploadForm() {
+            selectedFile = null;
+            document.getElementById('fileInput').value = '';
+            document.getElementById('selectedFile').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'none';
+            document.getElementById('loadingState').style.display = 'block';
+            document.getElementById('resultsContent').style.display = 'none';
+        }
+
+        // Upload and analyze function
+        async function uploadAndAnalyze() {
+            if (!selectedFile) {
+                alert('Please select a file first.');
+                return;
+            }
+
+            const resultsSection = document.getElementById('resultsSection');
+            const loadingState = document.getElementById('loadingState');
+            const resultsContent = document.getElementById('resultsContent');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+
+            // Show loading state
+            resultsSection.style.display = 'block';
+            loadingState.style.display = 'block';
+            resultsContent.style.display = 'none';
+            analyzeBtn.disabled = true;
+            analyzeBtn.textContent = 'Analyzing...';
+
+            try {
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                const response = await fetch(`${API_BASE_URL}/upload`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Upload failed');
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                console.error('Upload error:', error);
+                resultsContent.innerHTML = `
+                    <div style="color: red; text-align: center; padding: 2rem;">
+                        <h3>❌ Error</h3>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                resultsContent.style.display = 'block';
+            } finally {
+                loadingState.style.display = 'none';
+                analyzeBtn.disabled = false;
+                analyzeBtn.textContent = '🚀 Upload & Analyze';
+            }
+        }
+
+        // Display results function
+        function displayResults(data) {
+            const resultsContent = document.getElementById('resultsContent');
+            
+            let html = `
+                <div class="results-header">
+                    <h3>📊 Analysis Results</h3>
+                    <div class="results-stats">
+                        <div class="stat-card">
+                            <div class="stat-value">${data.rows || 0}</div>
+                            <div class="stat-label">Rows</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.columns || 0}</div>
+                            <div class="stat-label">Columns</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">${data.charts ? data.charts.length : 0}</div>
+                            <div class="stat-label">Charts</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Add charts if available
+            if (data.charts && data.charts.length > 0) {
+                html += '<div class="charts-grid">';
+                data.charts.forEach(chart => {
+                    const imageUrl = `${API_BASE_URL}${chart.url}`;
+                    html += `
+                        <div class="chart-container">
+                            <div class="chart-title">${chart.title}</div>
+                            <img src="${imageUrl}" alt="${chart.title}" onerror="this.style.display='none'">
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            // Add insights if available
+            if (data.insights && data.insights.length > 0) {
+                html += `
+                    <div class="insights-section">
+                        <h3>💡 Key Insights</h3>
+                        <ul class="insights-list">
+                `;
+                data.insights.forEach(insight => {
+                    html += `<li>${insight}</li>`;
+                });
+                html += '</ul></div>';
+            }
+
+            resultsContent.innerHTML = html;
+            resultsContent.style.display = 'block';
+        }
+
+        // Close modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('uploadModal');
+            if (event.target === modal) {
+                closeUploadModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeUploadModal();
+            }
+        });
+    </script>
+</body>
+</html>

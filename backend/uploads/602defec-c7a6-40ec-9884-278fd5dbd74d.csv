@@ -1,0 +1,6 @@
+Date,City,AQI,Temperature,Humidity
+2025-01-01,Mumbai,120,32,70
+2025-01-02,Mumbai,135,33,65
+2025-01-01,Delhi,180,28,55
+2025-01-02,Delhi,200,27,50
+2025-01-03,Pune,90,29,60
