@@ -47,6 +47,7 @@ import { getUploads, getReport } from '../services/api';
 import { toast } from 'react-toastify';
 import GeoHeatmap from './GeoHeatmap';
 import SatelliteDataVisuals from './SatelliteDataVisuals';
+import SurfaceRadiationVisuals from './SurfaceRadiationVisuals';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -351,6 +352,9 @@ const AnalyticsDashboard = () => {
 
                   {/* 🛰️ Satellite/Sensor Data Visualizations */}
                   <SatelliteDataVisuals analysis={upload} />
+
+                  {/* 🌡️ Surface Temperature & Radiation Analysis */}
+                  <SurfaceRadiationVisuals analysis={upload} />
 
                   {/* Interactive Charts Section */}
                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>

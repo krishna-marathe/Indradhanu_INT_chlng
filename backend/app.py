@@ -735,6 +735,7 @@ def analyze_file():
         from analytics_engine.data_loader import load_dataset
         from analytics_engine.anomaly_detector import detect_anomalies
         from analytics_engine.satellite_data_analyzer import analyze_satellite_data
+        from analytics_engine.surface_radiation_analyzer import analyze_surface_radiation
         
         df = load_dataset(file_path)
         if df is None:
@@ -742,6 +743,10 @@ def analyze_file():
         
         # 🛰️ SATELLITE/SENSOR DATA ANALYSIS
         analysis_result = analyze_satellite_data(df)
+        
+        # 🌡️ SURFACE TEMPERATURE & RADIATION ANALYSIS
+        surface_radiation_analysis = analyze_surface_radiation(df)
+        analysis_result['surface_radiation_analysis'] = surface_radiation_analysis
         
         # ⚠️ ANOMALY DETECTION
         anomalies = {}
