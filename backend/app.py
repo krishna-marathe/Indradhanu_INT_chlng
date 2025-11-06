@@ -736,6 +736,7 @@ def analyze_file():
         from analytics_engine.anomaly_detector import detect_anomalies
         from analytics_engine.satellite_data_analyzer import analyze_satellite_data
         from analytics_engine.surface_radiation_analyzer import analyze_surface_radiation
+        from analytics_engine.climate_metrics_analyzer import compute_climate_metrics
         
         df = load_dataset(file_path)
         if df is None:
@@ -747,6 +748,10 @@ def analyze_file():
         # 🌡️ SURFACE TEMPERATURE & RADIATION ANALYSIS
         surface_radiation_analysis = analyze_surface_radiation(df)
         analysis_result['surface_radiation_analysis'] = surface_radiation_analysis
+        
+        # 🌦️ CLIMATE METRICS & REGIONAL RISK ANALYSIS
+        climate_metrics = compute_climate_metrics(df)
+        analysis_result['climate_metrics'] = climate_metrics
         
         # ⚠️ ANOMALY DETECTION
         anomalies = {}

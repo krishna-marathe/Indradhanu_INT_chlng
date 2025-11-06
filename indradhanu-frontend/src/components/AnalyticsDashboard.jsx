@@ -48,6 +48,7 @@ import { toast } from 'react-toastify';
 import GeoHeatmap from './GeoHeatmap';
 import SatelliteDataVisuals from './SatelliteDataVisuals';
 import SurfaceRadiationVisuals from './SurfaceRadiationVisuals';
+import ClimateMetricsVisuals from './ClimateMetricsVisuals';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -355,6 +356,9 @@ const AnalyticsDashboard = () => {
 
                   {/* 🌡️ Surface Temperature & Radiation Analysis */}
                   <SurfaceRadiationVisuals analysis={upload} />
+
+                  {/* 🌦️ Climate Metrics & Regional Risk Analysis */}
+                  <ClimateMetricsVisuals metrics={upload.climate_metrics} />
 
                   {/* Interactive Charts Section */}
                   <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
