@@ -262,6 +262,357 @@ def serve_visual(filename):
         abort(500)
 
 # ============================================================================
+# GEOCODING ROUTES
+# ============================================================================
+
+@app.route("/geocoding/search", methods=["GET"])
+def search_locations():
+    """Search for locations by name"""
+    request_start = time.time()
+    
+    try:
+        query = request.args.get('q', '').strip()
+        limit = request.args.get('limit', 5, type=int)
+        
+        if not query:
+            return jsonify({
+                "error": "Missing required parameter: q (query)",
+                "error_code": "MISSING_QUERY"
+            }), 400
+        
+        if len(query) < 2:
+            return jsonify({
+                "error": "Query must be at least 2 characters long",
+                "error_code": "QUERY_TOO_SHORT"
+            }), 400
+        
+        # Limit results to reasonable range
+        limit = max(1, min(limit, 10))
+        
+        # Import geocoding service
+        from geocoding_service import GeocodingService
+        geocoding_service = GeocodingService()
+        
+        # Search for locations
+        locations = geocoding_service.search_location(query, limit)
+        
+        log_request_time("GET /geocoding/search", request_start, 
+                        f"({len(locations)} results for '{query}')")
+        
+        return jsonify({
+            "message": "Location search completed successfully",
+            "query": query,
+            "results": locations,
+            "count": len(locations)
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Geocoding search error: {str(e)}")
+        return jsonify({
+            "error": "Failed to search locations",
+            "error_code": "GEOCODING_SEARCH_ERROR",
+            "details": str(e)
+        }), 500
+
+@app.route("/geocoding/popular", methods=["GET"])
+def get_popular_locations():
+    """Get popular locations for quick access"""
+    request_start = time.time()
+    
+    try:
+        # Import geocoding service
+        from geocoding_service import GeocodingService
+        geocoding_service = GeocodingService()
+        
+        # Get popular locations (cached or pre-defined)
+        popular_locations = [
+            {"name": "New York, USA", "latitude": 40.7128, "longitude": -74.0060, "clean_name": "New York, New York, USA"},
+            {"name": "London, UK", "latitude": 51.5074, "longitude": -0.1278, "clean_name": "London, England, UK"},
+            {"name": "Tokyo, Japan", "latitude": 35.6762, "longitude": 139.6503, "clean_name": "Tokyo, Japan"},
+            {"name": "Paris, France", "latitude": 48.8566, "longitude": 2.3522, "clean_name": "Paris, France"},
+            {"name": "Berlin, Germany", "latitude": 52.5200, "longitude": 13.4050, "clean_name": "Berlin, Germany"},
+            {"name": "Sydney, Australia", "latitude": -33.8688, "longitude": 151.2093, "clean_name": "Sydney, Australia"},
+            {"name": "Mumbai, India", "latitude": 19.0760, "longitude": 72.8777, "clean_name": "Mumbai, India"},
+            {"name": "São Paulo, Brazil", "latitude": -23.5505, "longitude": -46.6333, "clean_name": "São Paulo, Brazil"},
+            {"name": "Cairo, Egypt", "latitude": 30.0444, "longitude": 31.2357, "clean_name": "Cairo, Egypt"},
+            {"name": "Moscow, Russia", "latitude": 55.7558, "longitude": 37.6176, "clean_name": "Moscow, Russia"},
+            {"name": "Beijing, China", "latitude": 39.9042, "longitude": 116.4074, "clean_name": "Beijing, China"},
+            {"name": "Los Angeles, USA", "latitude": 34.0522, "longitude": -118.2437, "clean_name": "Los Angeles, California, USA"},
+            {"name": "Dubai, UAE", "latitude": 25.2048, "longitude": 55.2708, "clean_name": "Dubai, UAE"},
+            {"name": "Singapore", "latitude": 1.3521, "longitude": 103.8198, "clean_name": "Singapore"},
+            {"name": "Toronto, Canada", "latitude": 43.6532, "longitude": -79.3832, "clean_name": "Toronto, Canada"}
+        ]
+        
+        log_request_time("GET /geocoding/popular", request_start, 
+                        f"({len(popular_locations)} popular locations)")
+        
+        return jsonify({
+            "message": "Popular locations retrieved successfully",
+            "locations": popular_locations,
+            "count": len(popular_locations)
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Popular locations error: {str(e)}")
+        return jsonify({
+            "error": "Failed to retrieve popular locations",
+            "error_code": "POPULAR_LOCATIONS_ERROR",
+            "details": str(e)
+        }), 500
+
+@app.route("/geocoding/reverse", methods=["GET"])
+def reverse_geocode():
+    """Convert coordinates to location name"""
+    request_start = time.time()
+    
+    try:
+        latitude = request.args.get('lat', type=float)
+        longitude = request.args.get('lon', type=float)
+        
+        if latitude is None or longitude is None:
+            return jsonify({
+                "error": "Missing required parameters: lat and lon",
+                "error_code": "MISSING_COORDINATES"
+            }), 400
+        
+        # Validate coordinates
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            return jsonify({
+                "error": "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180",
+                "error_code": "INVALID_COORDINATES"
+            }), 400
+        
+        # Import geocoding service
+        from geocoding_service import GeocodingService
+        geocoding_service = GeocodingService()
+        
+        # Reverse geocode
+        location = geocoding_service.reverse_geocode(latitude, longitude)
+        
+        log_request_time("GET /geocoding/reverse", request_start, 
+                        f"({location['clean_name']})")
+        
+        return jsonify({
+            "message": "Reverse geocoding completed successfully",
+            "location": location
+        }), 200
+        
+    except Exception as e:
+        print(f"❌ Reverse geocoding error: {str(e)}")
+        return jsonify({
+            "error": "Failed to reverse geocode location",
+            "error_code": "REVERSE_GEOCODING_ERROR",
+            "details": str(e)
+        }), 500
+
+# ============================================================================
+# WEATHER DATA ROUTES
+# ============================================================================
+
+@app.route("/weather/current", methods=["GET"])
+def get_current_weather():
+    """Get current weather data for specified coordinates"""
+    request_start = time.time()
+    
+    try:
+        # Get coordinates from query parameters
+        latitude = request.args.get('lat', type=float)
+        longitude = request.args.get('lon', type=float)
+        hours_back = request.args.get('hours', default=6, type=int)
+        
+        if latitude is None or longitude is None:
+            return jsonify({
+                "error": "Missing required parameters: lat and lon",
+                "error_code": "MISSING_COORDINATES"
+            }), 400
+        
+        # Validate coordinates
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            return jsonify({
+                "error": "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180",
+                "error_code": "INVALID_COORDINATES"
+            }), 400
+        
+        # Validate hours_back
+        if not (1 <= hours_back <= 24):
+            return jsonify({
+                "error": "Hours parameter must be between 1 and 24",
+                "error_code": "INVALID_HOURS"
+            }), 400
+        
+        # Import weather service
+        from weather_service import WeatherService
+        weather_service = WeatherService()
+        
+        # Fetch weather data
+        weather_data = weather_service.get_weather_data(latitude, longitude, hours_back)
+        
+        # Convert numpy types for JSON serialization
+        weather_data = convert_numpy_types(weather_data)
+        
+        log_request_time("GET /weather/current", request_start, 
+                        f"({weather_data['data_points']} data points)")
+        
+        return safe_json_response({
+            "message": "Weather data retrieved successfully",
+            "data": weather_data
+        }, 200)
+        
+    except Exception as e:
+        print(f"❌ Weather API error: {str(e)}")
+        return jsonify({
+            "error": "Failed to fetch weather data",
+            "error_code": "WEATHER_FETCH_ERROR",
+            "details": str(e)
+        }), 500
+
+@app.route("/weather/analyze", methods=["POST"])
+def analyze_weather_data():
+    """Analyze weather data and generate visualizations"""
+    request_start = time.time()
+    
+    try:
+        # Get request data
+        data = request.get_json()
+        if not data:
+            return jsonify({
+                "error": "No JSON data provided",
+                "error_code": "NO_DATA"
+            }), 400
+        
+        latitude = data.get('latitude')
+        longitude = data.get('longitude')
+        hours_back = data.get('hours', 6)
+        
+        if latitude is None or longitude is None:
+            return jsonify({
+                "error": "Missing required fields: latitude and longitude",
+                "error_code": "MISSING_COORDINATES"
+            }), 400
+        
+        # Import services
+        from weather_service import WeatherService
+        weather_service = WeatherService()
+        
+        # Fetch weather data
+        weather_data = weather_service.get_weather_data(latitude, longitude, hours_back)
+        
+        # Generate visualizations using analytics engine
+        engine = get_analysis_engine()
+        
+        # Convert weather data to DataFrame for analysis
+        import pandas as pd
+        df = pd.DataFrame(weather_data['hourly_data'])
+        
+        if not df.empty:
+            # Convert timestamp to datetime
+            df['timestamp'] = pd.to_datetime(df['timestamp'])
+            df = df.set_index('timestamp')
+            
+            # Generate weather-specific charts
+            filename = f"weather_{latitude}_{longitude}_{int(time.time())}"
+            chart_generator = engine.get_chart_generator()
+            
+            # Use the original working weather chart method
+            print("🔄 Using original weather charts")
+            
+            # Create simple charts that we know work
+            charts = []
+            
+            # Temperature chart
+            if 'temperature_2m' in df.columns:
+                temp_data = df['temperature_2m']
+                trend = "↗️ Rising" if temp_data.iloc[-1] > temp_data.iloc[0] else "↘️ Falling" if temp_data.iloc[-1] < temp_data.iloc[0] else "➡️ Stable"
+                temp_chart = {
+                    'title': f'🌡️ Temperature Analysis - {temp_data.iloc[-1]:.1f}°C',
+                    'type': 'line',
+                    'category': 'atmospheric',
+                    'description': f'Current: {temp_data.iloc[-1]:.1f}°C | Range: {temp_data.min():.1f}°C to {temp_data.max():.1f}°C | Trend: {trend} | Variation: {temp_data.max() - temp_data.min():.1f}°C over 6 hours',
+                    'url': None  # No image URL, will show data summary
+                }
+                charts.append(temp_chart)
+            
+            # Humidity chart
+            if 'relative_humidity_2m' in df.columns:
+                humidity_data = df['relative_humidity_2m']
+                humidity_level = "High" if humidity_data.iloc[-1] > 70 else "Moderate" if humidity_data.iloc[-1] > 40 else "Low"
+                trend = "↗️ Rising" if humidity_data.iloc[-1] > humidity_data.iloc[0] else "↘️ Falling" if humidity_data.iloc[-1] < humidity_data.iloc[0] else "➡️ Stable"
+                humidity_chart = {
+                    'title': f'💧 Humidity Analysis - {humidity_data.iloc[-1]:.0f}%',
+                    'type': 'line', 
+                    'category': 'atmospheric',
+                    'description': f'Current: {humidity_data.iloc[-1]:.0f}% ({humidity_level}) | Range: {humidity_data.min():.0f}% to {humidity_data.max():.0f}% | Trend: {trend} | Average: {humidity_data.mean():.0f}%',
+                    'url': None
+                }
+                charts.append(humidity_chart)
+            
+            # Wind chart
+            if 'wind_speed_10m' in df.columns:
+                wind_data = df['wind_speed_10m']
+                wind_level = "Strong" if wind_data.iloc[-1] > 25 else "Moderate" if wind_data.iloc[-1] > 10 else "Light"
+                direction = f" from {df['wind_direction_10m'].iloc[-1]:.0f}°" if 'wind_direction_10m' in df.columns else ""
+                wind_chart = {
+                    'title': f'💨 Wind Analysis - {wind_data.iloc[-1]:.1f} km/h',
+                    'type': 'line',
+                    'category': 'atmospheric', 
+                    'description': f'Current: {wind_data.iloc[-1]:.1f} km/h ({wind_level}){direction} | Max: {wind_data.max():.1f} km/h | Average: {wind_data.mean():.1f} km/h | Gusts detected: {"Yes" if wind_data.max() > wind_data.mean() * 1.5 else "No"}',
+                    'url': None
+                }
+                charts.append(wind_chart)
+            
+            # Pressure chart
+            if 'pressure_msl' in df.columns:
+                pressure_data = df['pressure_msl']
+                pressure_level = "High" if pressure_data.iloc[-1] > 1020 else "Normal" if pressure_data.iloc[-1] > 1000 else "Low"
+                trend = "↗️ Rising" if pressure_data.iloc[-1] > pressure_data.iloc[0] else "↘️ Falling" if pressure_data.iloc[-1] < pressure_data.iloc[0] else "➡️ Stable"
+                weather_indication = "Stable weather expected" if pressure_level == "High" else "Weather may change" if pressure_level == "Low" else "Normal conditions"
+                pressure_chart = {
+                    'title': f'📊 Pressure Analysis - {pressure_data.iloc[-1]:.0f} hPa',
+                    'type': 'line',
+                    'category': 'hydrological',
+                    'description': f'Current: {pressure_data.iloc[-1]:.0f} hPa ({pressure_level}) | Range: {pressure_data.min():.0f} to {pressure_data.max():.0f} hPa | Trend: {trend} | {weather_indication}',
+                    'url': None
+                }
+                charts.append(pressure_chart)
+            
+            # Rain chart
+            if 'rain' in df.columns:
+                rain_data = df['rain']
+                total_rain = rain_data.sum()
+                hours_with_rain = (rain_data > 0).sum()
+                rain_intensity = "Heavy" if rain_data.max() > 10 else "Moderate" if rain_data.max() > 2 else "Light" if total_rain > 0 else "None"
+                rain_chart = {
+                    'title': f'🌧️ Rainfall Analysis - {total_rain:.1f} mm total',
+                    'type': 'bar',
+                    'category': 'hydrological',
+                    'description': f'Total: {total_rain:.1f} mm over {hours_with_rain} hours | Max hourly: {rain_data.max():.1f} mm/h | Intensity: {rain_intensity} | {"Dry conditions" if total_rain == 0 else f"Wet period with {hours_with_rain}h of rain"}',
+                    'url': None
+                }
+                charts.append(rain_chart)
+            
+            # Add charts to weather data
+            weather_data['charts'] = charts
+        
+        # Convert numpy types
+        weather_data = convert_numpy_types(weather_data)
+        
+        log_request_time("POST /weather/analyze", request_start,
+                        f"({len(weather_data.get('charts', []))} charts)")
+        
+        return safe_json_response({
+            "message": "Weather analysis completed successfully",
+            "data": weather_data
+        }, 200)
+        
+    except Exception as e:
+        print(f"❌ Weather analysis error: {str(e)}")
+        return jsonify({
+            "error": "Failed to analyze weather data",
+            "error_code": "WEATHER_ANALYSIS_ERROR",
+            "details": str(e)
+        }), 500
+
+# ============================================================================
 # ANALYTICS ROUTES
 # ============================================================================
 

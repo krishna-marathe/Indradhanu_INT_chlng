@@ -26,6 +26,9 @@ const Navbar = () => {
           <Button color="inherit" onClick={() => navigate('/dashboard')}>
             Dashboard
           </Button>
+          <Button color="inherit" onClick={() => navigate('/weather')}>
+            Weather
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>

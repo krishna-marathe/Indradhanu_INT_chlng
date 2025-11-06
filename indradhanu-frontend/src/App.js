@@ -9,6 +9,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Upload from './pages/Upload';
 import Dashboard from './pages/Dashboard';
+import Weather from './pages/Weather';
 
 // Create Material-UI theme
 const theme = createTheme({
@@ -37,6 +38,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/upload" element={<Upload />} />
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/weather" element={<Weather />} />
             </Routes>
           </Box>
         </Box>

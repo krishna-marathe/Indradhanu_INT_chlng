@@ -26,6 +26,11 @@ class AnalysisEngine:
             self.chart_generator = ChartGenerator(self.output_dir)
             self.insights_generator = InsightsGenerator()
             self._components_initialized = True
+    
+    def get_chart_generator(self):
+        """Get the chart generator instance"""
+        self._init_components()
+        return self.chart_generator
         
     def analyze_dataset(self, file_path: str, filename: str) -> Dict[str, Any]:
         """
