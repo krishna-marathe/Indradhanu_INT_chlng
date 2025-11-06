@@ -726,7 +726,7 @@ def get_analysis_report(filename):
 
 @app.route('/analyze', methods=['POST'])
 def analyze_file():
-    """Advanced analysis with geospatial and anomaly detection"""
+    """Advanced analysis with satellite/sensor data, geospatial and anomaly detection"""
     try:
         data = request.get_json()
         filename = data.get('filename')
@@ -734,34 +734,14 @@ def analyze_file():
         
         from analytics_engine.data_loader import load_dataset
         from analytics_engine.anomaly_detector import detect_anomalies
+        from analytics_engine.satellite_data_analyzer import analyze_satellite_data
         
         df = load_dataset(file_path)
         if df is None:
             return jsonify({'error': 'Failed to load dataset'}), 400
         
-        analysis_result = {}
-        
-        # 🌍 GEO DATA DETECTION
-        if 'latitude' in df.columns and 'longitude' in df.columns:
-            value_col = None
-            for col in ['temperature', 'rainfall', 'humidity', 'aqi', 'pollution']:
-                if col.lower() in [c.lower() for c in df.columns]:
-                    # Find the actual column name (case-insensitive)
-                    value_col = next(c for c in df.columns if c.lower() == col.lower())
-                    break
-            
-            if value_col:
-                geo_points = df[['latitude', 'longitude', value_col]].dropna()
-                geo_points = geo_points.rename(columns={value_col: 'value'})
-                analysis_result['geo_points'] = geo_points.to_dict(orient='records')
-                analysis_result['hasGeoData'] = True
-                analysis_result['geoValueColumn'] = value_col
-            else:
-                analysis_result['geo_points'] = []
-                analysis_result['hasGeoData'] = False
-        else:
-            analysis_result['geo_points'] = []
-            analysis_result['hasGeoData'] = False
+        # 🛰️ SATELLITE/SENSOR DATA ANALYSIS
+        analysis_result = analyze_satellite_data(df)
         
         # ⚠️ ANOMALY DETECTION
         anomalies = {}
