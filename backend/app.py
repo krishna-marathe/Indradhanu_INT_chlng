@@ -724,6 +724,66 @@ def get_analysis_report(filename):
             "details": str(e)
         }), 500
 
+@app.route('/analyze', methods=['POST'])
+def analyze_file():
+    """Advanced analysis with geospatial and anomaly detection"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        
+        from analytics_engine.data_loader import load_dataset
+        from analytics_engine.anomaly_detector import detect_anomalies
+        
+        df = load_dataset(file_path)
+        if df is None:
+            return jsonify({'error': 'Failed to load dataset'}), 400
+        
+        analysis_result = {}
+        
+        # 🌍 GEO DATA DETECTION
+        if 'latitude' in df.columns and 'longitude' in df.columns:
+            value_col = None
+            for col in ['temperature', 'rainfall', 'humidity', 'aqi', 'pollution']:
+                if col.lower() in [c.lower() for c in df.columns]:
+                    # Find the actual column name (case-insensitive)
+                    value_col = next(c for c in df.columns if c.lower() == col.lower())
+                    break
+            
+            if value_col:
+                geo_points = df[['latitude', 'longitude', value_col]].dropna()
+                geo_points = geo_points.rename(columns={value_col: 'value'})
+                analysis_result['geo_points'] = geo_points.to_dict(orient='records')
+                analysis_result['hasGeoData'] = True
+                analysis_result['geoValueColumn'] = value_col
+            else:
+                analysis_result['geo_points'] = []
+                analysis_result['hasGeoData'] = False
+        else:
+            analysis_result['geo_points'] = []
+            analysis_result['hasGeoData'] = False
+        
+        # ⚠️ ANOMALY DETECTION
+        anomalies = {}
+        numeric_cols = df.select_dtypes(include=np.number).columns
+        for col in numeric_cols:
+            if col not in ['latitude', 'longitude']:  # Skip geo coordinates
+                anomalies[col] = detect_anomalies(df, col)
+        
+        alerts = []
+        for col, records in anomalies.items():
+            if len(records) > 0:
+                alerts.append(f"⚠️ Sudden spike detected in {col}: {len(records)} unusual readings.")
+        
+        analysis_result['anomalies'] = convert_numpy_types(anomalies)
+        analysis_result['alerts'] = alerts
+        
+        return safe_json_response(analysis_result, 200)
+        
+    except Exception as e:
+        print(f"❌ Error in analysis: {e}")
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/uploads', methods=['GET'])
 def list_uploads():
     """List all uploaded files with basic metadata"""

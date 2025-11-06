@@ -21,6 +21,12 @@ def load_dataset(file_path):
         # Drop completely empty columns
         df.dropna(how='all', axis=1, inplace=True)
 
+        # Check for geospatial data
+        if 'latitude' in df.columns and 'longitude' in df.columns:
+            df['has_geo'] = True
+        else:
+            df['has_geo'] = False
+        
         print(f"✅ Loaded dataset — Rows: {df.shape[0]}, Columns: {df.shape[1]}")
         return df
 

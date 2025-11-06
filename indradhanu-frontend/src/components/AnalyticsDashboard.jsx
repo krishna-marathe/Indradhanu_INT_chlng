@@ -45,6 +45,7 @@ import {
 } from '@mui/icons-material';
 import { getUploads, getReport } from '../services/api';
 import { toast } from 'react-toastify';
+import GeoHeatmap from './GeoHeatmap';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
