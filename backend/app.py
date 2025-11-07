@@ -774,6 +774,77 @@ def analyze_file():
         print(f"❌ Error in analysis: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/upload_research_paper', methods=['POST'])
+def upload_research_paper():
+    """Upload and analyze research documents (PDF, DOCX, TXT)"""
+    request_start = time.time()
+    
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file uploaded!', 'error_code': 'NO_FILE'}), 400
+        
+        file = request.files['file']
+        if file.filename == "":
+            return jsonify({'error': 'Empty filename!', 'error_code': 'EMPTY_FILENAME'}), 400
+        
+        # Validate file type
+        allowed_extensions = {'.pdf', '.docx', '.txt'}
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        
+        if file_ext not in allowed_extensions:
+            return jsonify({
+                'error': f'Invalid file type. Only {", ".join(allowed_extensions)} files are allowed.',
+                'error_code': 'INVALID_FILE_TYPE'
+            }), 400
+        
+        # Check file size (50MB limit for documents)
+        file.seek(0, 2)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > 50 * 1024 * 1024:  # 50MB
+            return jsonify({
+                'error': 'File too large. Maximum size is 50MB.',
+                'error_code': 'FILE_TOO_LARGE'
+            }), 400
+        
+        # Save file with unique name
+        filename = f"{uuid.uuid4()}{file_ext}"
+        file_path = os.path.join(UPLOAD_FOLDER, filename)
+        file.save(file_path)
+        
+        print(f"📄 Research paper saved: {filename} ({file_size} bytes)")
+        
+        # Analyze research paper
+        from analytics_engine.simple_research_analyzer import analyze_research_paper
+        
+        analysis_result = analyze_research_paper(file_path)
+        
+        # Format response
+        response_data = {
+            'status': 'success',
+            'message': '✅ Research paper analyzed successfully!',
+            'filename': filename,
+            'original_filename': file.filename,
+            'timestamp': datetime.now().isoformat(),
+            'file_size': file_size,
+            'analysis': convert_numpy_types(analysis_result)
+        }
+        
+        log_request_time("POST /upload_research_paper", request_start, 
+                        f"({analysis_result.get('word_count', 0)} words, {len(analysis_result.get('regions', []))} regions)")
+        
+        return safe_json_response(response_data, 200)
+        
+    except Exception as e:
+        print(f"❌ Research paper analysis error: {str(e)}")
+        print(traceback.format_exc())
+        return jsonify({
+            'error': 'Failed to analyze research paper',
+            'error_code': 'ANALYSIS_FAILED',
+            'details': str(e)
+        }), 500
+
 @app.route('/uploads', methods=['GET'])
 def list_uploads():
     """List all uploaded files with basic metadata"""

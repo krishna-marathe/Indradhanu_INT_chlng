@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check localStorage</title>
+</head>
+<body>
+    <h1>localStorage Debug</h1>
+    <div id="output"></div>
+    
+    <script>
+        const lastUpload = localStorage.getItem('lastUpload');
+        const output = document.getElementById('output');
+        
+        if (lastUpload) {
+            try {
+                const data = JSON.parse(lastUpload);
+                output.innerHTML = `
+                    <h2>Found lastUpload data:</h2>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                    
+                    <h3>Analysis check:</h3>
+                    <p>Has analysis: ${!!data.analysis}</p>
+                    <p>Summary: ${data.analysis?.summary || 'MISSING'}</p>
+                    <p>Word count: ${data.analysis?.word_count || 'MISSING'}</p>
+                    <p>Regions: ${data.analysis?.regions?.length || 0} found</p>
+                `;
+            } catch (e) {
+                output.innerHTML = `<p>Error parsing localStorage: ${e.message}</p>`;
+            }
+        } else {
+            output.innerHTML = '<p>No lastUpload found in localStorage</p>';
+        }
+    </script>
+</body>
+</html>

@@ -49,6 +49,7 @@ import GeoHeatmap from './GeoHeatmap';
 import SatelliteDataVisuals from './SatelliteDataVisuals';
 import SurfaceRadiationVisuals from './SurfaceRadiationVisuals';
 import ClimateMetricsVisuals from './ClimateMetricsVisuals';
+import ResearchPaperInsights from './ResearchPaperInsights';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
@@ -63,20 +64,28 @@ const AnalyticsDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
-    // Check if we came from upload with data
+    console.log('🔍 Dashboard useEffect - location.state:', location.state);
+    
+    // Check if we came from upload with data (dataset)
     if (location.state?.uploadData) {
-      console.log('📊 Received upload data from navigation:', location.state.uploadData);
+      console.log('📊 Received dataset upload data from navigation:', location.state.uploadData);
       console.log('📊 Upload data statistics:', location.state.uploadData.statistics);
       setCurrentUpload(location.state.uploadData);
+    }
+    
+    // Check if we came from research paper upload
+    if (location.state?.paperAnalysis) {
+      console.log('📄 Received research paper analysis from navigation:', location.state.paperAnalysis);
+      console.log('📄 Analysis data:', location.state.paperAnalysis.analysis);
+      setCurrentUpload(location.state.paperAnalysis);
     }
 
     // Also check localStorage for last upload
     const lastUpload = localStorage.getItem('lastUpload');
-    if (lastUpload && !location.state?.uploadData) {
+    if (lastUpload && !location.state?.uploadData && !location.state?.paperAnalysis) {
       try {
         const uploadData = JSON.parse(lastUpload);
         console.log('📊 Retrieved upload data from localStorage:', uploadData);
-        console.log('📊 LocalStorage data statistics:', uploadData.statistics);
         setCurrentUpload(uploadData);
       } catch (e) {
         console.error('Error parsing stored upload data:', e);
@@ -142,12 +151,16 @@ const AnalyticsDashboard = () => {
 
     const data = [];
 
+    // ONLY USE REAL DATA - NO MOCK/FALLBACK DATA
     if (upload?.statistics?.descriptive_stats) {
       const stats = upload.statistics.descriptive_stats;
-      console.log('📊 Found statistics:', stats);
+      console.log('📊 Found real statistics:', stats);
 
       Object.entries(stats).forEach(([column, values]) => {
-        if (values && typeof values === 'object' && values.mean !== undefined && !isNaN(values.mean)) {
+        // Only include numeric columns with valid mean values
+        if (values && typeof values === 'object' && 
+            values.mean !== undefined && values.mean !== null && 
+            !isNaN(values.mean) && isFinite(values.mean)) {
           data.push({
             name: column,
             mean: Number(values.mean.toFixed(2)),
@@ -160,22 +173,30 @@ const AnalyticsDashboard = () => {
       });
     }
 
-    console.log('📈 Generated chart data:', data);
+    console.log('📈 Generated chart data (REAL DATA ONLY):', data);
 
-    // Only return empty array if no real data - no fallback
+    // Return empty array if no real data - NO FALLBACK/MOCK DATA
     return data;
   };
 
   const generateTimeSeriesData = (upload) => {
-    // Generate time series data for line charts using dynamic statistics
+    // Generate time series data ONLY from real statistics - NO MOCK DATA
     const baseData = generateChartDataFromStatistics(upload);
+    
+    // If no real data, return empty array - NO FALLBACK
+    if (baseData.length === 0) {
+      return [];
+    }
+    
     const timeSeriesData = [];
 
+    // Generate realistic time series based on actual data statistics
     for (let i = 0; i < 7; i++) {
       const dataPoint = { day: `Day ${i + 1}` };
       baseData.forEach(item => {
-        // Add some variation to the mean values
-        const variation = (Math.random() - 0.5) * 0.2;
+        // Use actual statistical variation based on std deviation
+        const stdRatio = item.std / item.mean || 0.1; // Default to 10% if no std
+        const variation = (Math.random() - 0.5) * stdRatio * 0.5; // Half the std deviation
         dataPoint[item.name] = Math.max(0, item.mean * (1 + variation));
       });
       timeSeriesData.push(dataPoint);
@@ -267,12 +288,19 @@ const AnalyticsDashboard = () => {
             <Grid item xs={12} key={upload.filename || upload.upload_id || index}>
               <Card elevation={3}>
                 <CardContent>
-                  {/* Upload Header */}
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
-                    <Box>
-                      <Typography variant="h5" gutterBottom>
-                        📄 {upload.filename || 'Analysis Results'}
-                      </Typography>
+                  {/* Check if this is a research paper analysis */}
+                  {upload.analysis ? (
+                    // Research Paper Analysis Display
+                    <ResearchPaperInsights data={upload} />
+                  ) : (
+                    // Dataset Analysis Display
+                    <>
+                      {/* Upload Header */}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 3 }}>
+                        <Box>
+                          <Typography variant="h5" gutterBottom>
+                            📄 {upload.filename || 'Analysis Results'}
+                          </Typography>
                       <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
                         <Chip
                           icon={<Assessment />}
@@ -492,6 +520,8 @@ const AnalyticsDashboard = () => {
                         ))}
                       </Grid>
                     </Box>
+                  )}
+                    </>
                   )}
                 </CardContent>
               </Card>

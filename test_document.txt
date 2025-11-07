@@ -1,0 +1,15 @@
+Climate Change Research in India
+
+This research paper examines the impact of climate change on agriculture in Maharashtra, India from 2010 to 2023. 
+
+Our study found that temperatures increased by 1.5°C over the study period. Rainfall decreased by 20% in most regions including Pune, Mumbai, and Nashik. 
+
+We used statistical analysis and machine learning to analyze the data. The research shows significant impacts on crop yields, with cotton production declining by 25%.
+
+Key findings include:
+- Temperature rise of 1.5°C
+- 20% reduction in rainfall
+- 25% decline in cotton yields
+- Increased drought frequency
+
+This study demonstrates the urgent need for climate adaptation strategies in Indian agriculture.

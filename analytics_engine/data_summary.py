@@ -11,12 +11,22 @@ class DataSummary:
     
     def generate_summary(self, df, schema: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate comprehensive summary statistics
+        Generate comprehensive summary statistics from real data only - NO MOCK DATA
         """
         # Lazy import heavy libraries
         import pandas as pd
         import numpy as np
         from scipy import stats
+        
+        # Only generate summary if we have actual data
+        if df is None or df.empty:
+            return {
+                'descriptive_stats': {},
+                'correlations': {},
+                'distributions': {},
+                'missing_data': {},
+                'outliers': {}
+            }
         
         summary = {
             'descriptive_stats': self._descriptive_statistics(df, schema),
@@ -30,41 +40,52 @@ class DataSummary:
     
     def _descriptive_statistics(self, df, schema: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Generate descriptive statistics for numeric columns
+        Generate descriptive statistics for numeric columns - REAL DATA ONLY
         """
         stats = {}
         
-        for column in schema['numeric_columns']:
-            col_data = df[column].dropna()
-            if len(col_data) > 0:
-                stats[column] = {
-                    'count': len(col_data),
-                    'mean': float(col_data.mean()),
-                    'median': float(col_data.median()),
-                    'mode': float(col_data.mode().iloc[0]) if not col_data.mode().empty else None,
-                    'std': float(col_data.std()),
-                    'var': float(col_data.var()),
-                    'min': float(col_data.min()),
-                    'max': float(col_data.max()),
-                    'q25': float(col_data.quantile(0.25)),
-                    'q75': float(col_data.quantile(0.75)),
-                    'iqr': float(col_data.quantile(0.75) - col_data.quantile(0.25)),
-                    'skewness': float(col_data.skew()),
-                    'kurtosis': float(col_data.kurtosis())
-                }
+        # Only process numeric columns that actually exist and have data
+        for column in schema.get('numeric_columns', []):
+            if column in df.columns:
+                col_data = df[column].dropna()
+                if len(col_data) > 0:
+                    try:
+                        stats[column] = {
+                            'count': int(len(col_data)),
+                            'mean': float(col_data.mean()),
+                            'median': float(col_data.median()),
+                            'mode': float(col_data.mode().iloc[0]) if not col_data.mode().empty else None,
+                            'std': float(col_data.std()) if len(col_data) > 1 else 0.0,
+                            'var': float(col_data.var()) if len(col_data) > 1 else 0.0,
+                            'min': float(col_data.min()),
+                            'max': float(col_data.max()),
+                            'q25': float(col_data.quantile(0.25)),
+                            'q75': float(col_data.quantile(0.75)),
+                            'iqr': float(col_data.quantile(0.75) - col_data.quantile(0.25)),
+                            'skewness': float(col_data.skew()) if len(col_data) > 1 else 0.0,
+                            'kurtosis': float(col_data.kurtosis()) if len(col_data) > 1 else 0.0
+                        }
+                    except Exception as e:
+                        print(f"⚠️ Error calculating stats for {column}: {e}")
+                        continue
         
-        # Categorical statistics
-        for column in schema['categorical_columns']:
-            col_data = df[column].dropna()
-            if len(col_data) > 0:
-                value_counts = col_data.value_counts()
-                stats[column] = {
-                    'count': len(col_data),
-                    'unique_count': col_data.nunique(),
-                    'most_frequent': value_counts.index[0] if len(value_counts) > 0 else None,
-                    'most_frequent_count': int(value_counts.iloc[0]) if len(value_counts) > 0 else 0,
-                    'frequency_distribution': value_counts.head(10).to_dict()
-                }
+        # Categorical statistics - REAL DATA ONLY
+        for column in schema.get('categorical_columns', []):
+            if column in df.columns:
+                col_data = df[column].dropna()
+                if len(col_data) > 0:
+                    try:
+                        value_counts = col_data.value_counts()
+                        stats[column] = {
+                            'count': int(len(col_data)),
+                            'unique_count': int(col_data.nunique()),
+                            'most_frequent': str(value_counts.index[0]) if len(value_counts) > 0 else None,
+                            'most_frequent_count': int(value_counts.iloc[0]) if len(value_counts) > 0 else 0,
+                            'frequency_distribution': {str(k): int(v) for k, v in value_counts.head(10).to_dict().items()}
+                        }
+                    except Exception as e:
+                        print(f"⚠️ Error calculating categorical stats for {column}: {e}")
+                        continue
         
         return stats
     
