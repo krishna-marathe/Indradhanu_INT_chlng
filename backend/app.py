@@ -815,8 +815,8 @@ def upload_research_paper():
         
         print(f"📄 Research paper saved: {filename} ({file_size} bytes)")
         
-        # Analyze research paper
-        from analytics_engine.simple_research_analyzer import analyze_research_paper
+        # Analyze research paper with advanced analyzer
+        from analytics_engine.advanced_research_analyzer import analyze_research_paper
         
         analysis_result = analyze_research_paper(file_path)
         

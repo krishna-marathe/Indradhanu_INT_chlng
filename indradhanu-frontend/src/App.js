@@ -10,6 +10,7 @@ import Home from './pages/Home';
 import Upload from './pages/Upload';
 import Dashboard from './pages/Dashboard';
 import Weather from './pages/Weather';
+import ChatbotPage from './pages/Chatbot';
 
 // Create Material-UI theme
 const theme = createTheme({
@@ -39,6 +40,7 @@ function App() {
               <Route path="/upload" element={<Upload />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/weather" element={<Weather />} />
+              <Route path="/chatbot" element={<ChatbotPage />} />
             </Routes>
           </Box>
         </Box>

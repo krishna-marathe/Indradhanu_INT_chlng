@@ -29,6 +29,9 @@ const Navbar = () => {
           <Button color="inherit" onClick={() => navigate('/weather')}>
             Weather
           </Button>
+          <Button color="inherit" onClick={() => navigate('/chatbot')}>
+            🤖 AI Chatbot
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>
