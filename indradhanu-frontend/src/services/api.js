@@ -5,7 +5,7 @@ const API_BASE = "http://127.0.0.1:5000";
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE,
-  timeout: 60000, // 60 seconds timeout for large files
+  timeout: 600000, // 60 seconds timeout for large files
 });
 
 // Request interceptor for logging

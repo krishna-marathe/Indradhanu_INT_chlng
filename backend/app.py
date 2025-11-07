@@ -440,9 +440,9 @@ def get_current_weather():
                 "error_code": "INVALID_HOURS"
             }), 400
         
-        # Import weather service
-        from weather_service import WeatherService
-        weather_service = WeatherService()
+        # Import AccuWeather service
+        from accuweather_service import AccuWeatherService
+        weather_service = AccuWeatherService()
         
         # Fetch weather data
         weather_data = weather_service.get_weather_data(latitude, longitude, hours_back)
@@ -490,9 +490,9 @@ def analyze_weather_data():
                 "error_code": "MISSING_COORDINATES"
             }), 400
         
-        # Import services
-        from weather_service import WeatherService
-        weather_service = WeatherService()
+        # Import AccuWeather service
+        from accuweather_service import AccuWeatherService
+        weather_service = AccuWeatherService()
         
         # Fetch weather data
         weather_data = weather_service.get_weather_data(latitude, longitude, hours_back)
@@ -609,6 +609,228 @@ def analyze_weather_data():
         return jsonify({
             "error": "Failed to analyze weather data",
             "error_code": "WEATHER_ANALYSIS_ERROR",
+            "details": str(e)
+        }), 500
+
+# ============================================================================
+# AQI (AIR QUALITY INDEX) ROUTES
+# ============================================================================
+
+@app.route("/aqi/current", methods=["GET"])
+def get_current_aqi():
+    """Get current Air Quality Index for specified coordinates using WAQI API"""
+    request_start = time.time()
+    
+    try:
+        # Get coordinates from query parameters
+        latitude = request.args.get('lat', type=float)
+        longitude = request.args.get('lon', type=float)
+        
+        if latitude is None or longitude is None:
+            return jsonify({
+                "error": "Missing required parameters: lat and lon",
+                "error_code": "MISSING_COORDINATES"
+            }), 400
+        
+        # Validate coordinates
+        if not (-90 <= latitude <= 90) or not (-180 <= longitude <= 180):
+            return jsonify({
+                "error": "Invalid coordinates. Latitude must be -90 to 90, longitude -180 to 180",
+                "error_code": "INVALID_COORDINATES"
+            }), 400
+        
+        # Fetch AQI data from WAQI (World Air Quality Index) API
+        import requests
+        
+        # WAQI API token
+        # NOTE: Demo token has limitations and may return distant monitoring stations
+        # Get your own token at: https://aqicn.org/data-platform/token/
+        waqi_token = os.getenv('WAQI_API_TOKEN', 'demo')
+        waqi_url = f"https://api.waqi.info/feed/geo:{latitude};{longitude}/"
+        
+        response = requests.get(waqi_url, params={'token': waqi_token}, timeout=10)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        if data.get('status') != 'ok':
+            return jsonify({
+                "error": "Failed to fetch AQI data",
+                "error_code": "AQI_FETCH_ERROR",
+                "details": data.get('data', 'Unknown error')
+            }), 500
+        
+        aqi_data = data.get('data', {})
+        
+        # Process AQI data
+        aqi_value = aqi_data.get('aqi', 0)
+        
+        # Determine AQI category and health implications
+        if aqi_value <= 50:
+            category = "Good"
+            color = "#00e400"
+            health_implications = "Air quality is satisfactory, and air pollution poses little or no risk."
+            cautionary_statement = "None"
+        elif aqi_value <= 100:
+            category = "Moderate"
+            color = "#ffff00"
+            health_implications = "Air quality is acceptable. However, there may be a risk for some people, particularly those who are unusually sensitive to air pollution."
+            cautionary_statement = "Unusually sensitive people should consider limiting prolonged outdoor exertion."
+        elif aqi_value <= 150:
+            category = "Unhealthy for Sensitive Groups"
+            color = "#ff7e00"
+            health_implications = "Members of sensitive groups may experience health effects. The general public is less likely to be affected."
+            cautionary_statement = "Sensitive groups should limit prolonged outdoor exertion."
+        elif aqi_value <= 200:
+            category = "Unhealthy"
+            color = "#ff0000"
+            health_implications = "Some members of the general public may experience health effects; members of sensitive groups may experience more serious health effects."
+            cautionary_statement = "Everyone should limit prolonged outdoor exertion."
+        elif aqi_value <= 300:
+            category = "Very Unhealthy"
+            color = "#8f3f97"
+            health_implications = "Health alert: The risk of health effects is increased for everyone."
+            cautionary_statement = "Everyone should avoid prolonged outdoor exertion; sensitive groups should remain indoors."
+        else:
+            category = "Hazardous"
+            color = "#7e0023"
+            health_implications = "Health warning of emergency conditions: everyone is more likely to be affected."
+            cautionary_statement = "Everyone should avoid all outdoor exertion."
+        
+        # Extract pollutant data
+        iaqi = aqi_data.get('iaqi', {})
+        pollutants = {}
+        
+        pollutant_names = {
+            'pm25': 'PM2.5',
+            'pm10': 'PM10',
+            'o3': 'Ozone (O₃)',
+            'no2': 'Nitrogen Dioxide (NO₂)',
+            'so2': 'Sulfur Dioxide (SO₂)',
+            'co': 'Carbon Monoxide (CO)'
+        }
+        
+        for key, name in pollutant_names.items():
+            if key in iaqi:
+                pollutants[key] = {
+                    'name': name,
+                    'value': iaqi[key].get('v', 0),
+                    'unit': 'μg/m³' if key.startswith('pm') else 'ppb'
+                }
+        
+        # Get dominant pollutant
+        dominant_pollutant = aqi_data.get('dominentpol', 'Unknown')
+        dominant_pollutant_name = pollutant_names.get(dominant_pollutant, dominant_pollutant.upper())
+        
+        # Get station info
+        station_info = aqi_data.get('city', {})
+        station_name = station_info.get('name', 'Unknown')
+        station_url = station_info.get('url', '')
+        
+        # Get station coordinates to calculate distance
+        station_geo = station_info.get('geo', [])
+        station_lat = station_geo[0] if len(station_geo) > 0 else latitude
+        station_lon = station_geo[1] if len(station_geo) > 1 else longitude
+        
+        # Calculate distance from requested location to monitoring station
+        from math import radians, sin, cos, sqrt, atan2
+        
+        def calculate_distance(lat1, lon1, lat2, lon2):
+            """Calculate distance between two points in km using Haversine formula"""
+            R = 6371  # Earth's radius in km
+            
+            lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+            dlat = lat2 - lat1
+            dlon = lon2 - lon1
+            
+            a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+            c = 2 * atan2(sqrt(a), sqrt(1-a))
+            distance = R * c
+            
+            return distance
+        
+        distance_km = calculate_distance(latitude, longitude, station_lat, station_lon)
+        
+        # Try to get a more accurate city name using reverse geocoding
+        try:
+            geocode_url = f"https://nominatim.openstreetmap.org/reverse"
+            geocode_params = {
+                'lat': latitude,
+                'lon': longitude,
+                'format': 'json',
+                'zoom': 10
+            }
+            geocode_headers = {
+                'User-Agent': 'Indradhanu-Analytics/1.0'
+            }
+            geocode_response = requests.get(geocode_url, params=geocode_params, headers=geocode_headers, timeout=5)
+            
+            if geocode_response.status_code == 200:
+                geocode_data = geocode_response.json()
+                address = geocode_data.get('address', {})
+                
+                # Try to get city name from various fields
+                city_name = (
+                    address.get('city') or 
+                    address.get('town') or 
+                    address.get('village') or 
+                    address.get('municipality') or
+                    address.get('county') or
+                    address.get('state') or
+                    'Unknown Location'
+                )
+                country = address.get('country', '')
+                
+                if country:
+                    city_name = f"{city_name}, {country}"
+            else:
+                city_name = f"Location ({latitude:.2f}°, {longitude:.2f}°)"
+        except:
+            city_name = f"Location ({latitude:.2f}°, {longitude:.2f}°)"
+        
+        # Get time
+        time_info = aqi_data.get('time', {})
+        update_time = time_info.get('s', 'Unknown')
+        
+        processed_aqi = {
+            'aqi': aqi_value,
+            'category': category,
+            'color': color,
+            'health_implications': health_implications,
+            'cautionary_statement': cautionary_statement,
+            'dominant_pollutant': dominant_pollutant_name,
+            'pollutants': pollutants,
+            'location': {
+                'city': city_name,
+                'latitude': latitude,
+                'longitude': longitude,
+                'station_name': station_name,
+                'station_distance_km': round(distance_km, 1),
+                'station_url': station_url
+            },
+            'last_update': update_time,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        log_request_time("GET /aqi/current", request_start, f"AQI: {aqi_value} ({category})")
+        
+        return safe_json_response({
+            "message": "AQI data retrieved successfully",
+            "data": processed_aqi
+        }, 200)
+        
+    except requests.exceptions.RequestException as e:
+        print(f"❌ WAQI API error: {str(e)}")
+        return jsonify({
+            "error": "Failed to fetch AQI data from external API",
+            "error_code": "WAQI_API_ERROR",
+            "details": str(e)
+        }), 500
+    except Exception as e:
+        print(f"❌ AQI processing error: {str(e)}")
+        return jsonify({
+            "error": "Failed to process AQI data",
+            "error_code": "AQI_PROCESSING_ERROR",
             "details": str(e)
         }), 500
 

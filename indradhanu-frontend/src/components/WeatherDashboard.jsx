@@ -30,6 +30,7 @@ import {
   Public as GlobalIcon
 } from '@mui/icons-material';
 import axios from 'axios';
+import AQIDisplay from './AQIDisplay';
 
 const WeatherDashboard = () => {
   const [weatherData, setWeatherData] = useState(null);
@@ -381,6 +382,12 @@ const WeatherDashboard = () => {
               Updated: {formatTimestamp(weatherData.timestamp)}
             </Typography>
           </Paper>
+
+          {/* AQI Display */}
+          <AQIDisplay 
+            latitude={weatherData.location?.latitude} 
+            longitude={weatherData.location?.longitude} 
+          />
 
           {/* Statistics by Category */}
           {weatherData.statistics && (

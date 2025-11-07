@@ -21,10 +21,12 @@ class AnalysisEngine:
             from .data_summary import DataSummary
             from .chart_generator import ChartGenerator
             from .insights_generator import InsightsGenerator
+            from .ai_chart_explainer import AIChartExplainer
             
             self.data_summary = DataSummary()
             self.chart_generator = ChartGenerator(self.output_dir)
             self.insights_generator = InsightsGenerator()
+            self.ai_explainer = AIChartExplainer()
             self._components_initialized = True
     
     def get_chart_generator(self):
@@ -72,8 +74,32 @@ class AnalysisEngine:
         # Step 4: Generate dynamic visualizations
         charts = self.chart_generator.generate_charts(df, schema, filename)
         
+        # Step 4.5: Generate AI explanations for charts (with timeout protection)
+        try:
+            print(f"🤖 Generating AI explanations for up to 15 charts...")
+            charts_with_explanations = self.ai_explainer.explain_multiple_charts(charts, statistics, max_charts=15)
+        except Exception as e:
+            print(f"⚠️ AI explanation generation failed: {str(e)}")
+            print("⚠️ Continuing without AI explanations...")
+            charts_with_explanations = charts
+        
         # Step 5: Generate insights
         insights = self.insights_generator.generate_insights(df, schema, statistics)
+        
+        # Step 5.5: Generate comprehensive AI analysis (with timeout protection)
+        try:
+            print("🤖 Generating comprehensive AI analysis...")
+            ai_detailed_analysis = self.ai_explainer.generate_detailed_analysis(charts_with_explanations, insights, statistics)
+            ai_summary = ai_detailed_analysis.get('executive_summary', '')
+        except Exception as e:
+            print(f"⚠️ AI analysis generation failed: {str(e)}")
+            ai_summary = f"Analysis generated {len(charts)} visualizations and {len(insights)} key insights from the data."
+            ai_detailed_analysis = {
+                'executive_summary': ai_summary,
+                'key_trends': insights[:5],
+                'recommendations': [],
+                'data_quality': 'Analysis completed successfully.'
+            }
         
         # Step 6: Compile results
         results = {
@@ -86,8 +112,10 @@ class AnalysisEngine:
             },
             'schema': schema,
             'statistics': statistics,
-            'charts': charts,
+            'charts': charts_with_explanations,  # Charts now include AI explanations
             'insights': insights,
+            'ai_summary': ai_summary,  # Overall AI analysis summary (backward compatibility)
+            'ai_detailed_analysis': ai_detailed_analysis,  # Comprehensive AI analysis
             'column_info': self._get_column_info(df)
         }
         

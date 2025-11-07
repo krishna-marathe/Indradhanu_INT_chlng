@@ -357,6 +357,35 @@ const AnalyticsDashboard = () => {
                   <Divider sx={{ mb: 3 }} />
 
                   {/* Insights Section */}
+                  {/* AI Executive Summary */}
+                  {upload.ai_summary && (
+                    <Paper sx={{ p: 3, mb: 3, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                        <Box sx={{
+                          backgroundColor: 'white',
+                          color: '#667eea',
+                          borderRadius: '50%',
+                          width: 40,
+                          height: 40,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.2rem',
+                          fontWeight: 'bold',
+                          mr: 2
+                        }}>
+                          AI
+                        </Box>
+                        <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                          AI Executive Summary
+                        </Typography>
+                      </Box>
+                      <Typography variant="body1" sx={{ lineHeight: 1.8, fontSize: '1.05rem' }}>
+                        {upload.ai_summary}
+                      </Typography>
+                    </Paper>
+                  )}
+
                   {upload.insights && upload.insights.length > 0 && (
                     <Paper sx={{ p: 3, mb: 3, backgroundColor: 'primary.light', color: 'primary.contrastText' }}>
                       <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -482,8 +511,8 @@ const AnalyticsDashboard = () => {
                       <Grid container spacing={2}>
                         {upload.charts.map((chart, idx) => (
                           <Grid item xs={12} md={6} key={idx}>
-                            <Paper sx={{ p: 2, textAlign: 'center' }}>
-                              <Typography variant="subtitle1" gutterBottom color="primary">
+                            <Paper sx={{ p: 2 }}>
+                              <Typography variant="subtitle1" gutterBottom color="primary" sx={{ fontWeight: 'bold' }}>
                                 {chart.title}
                               </Typography>
                               <Box sx={{
@@ -491,7 +520,8 @@ const AnalyticsDashboard = () => {
                                 borderColor: 'primary.light',
                                 borderRadius: 2,
                                 overflow: 'hidden',
-                                backgroundColor: 'background.paper'
+                                backgroundColor: 'background.paper',
+                                mb: 2
                               }}>
                                 <img
                                   src={`http://127.0.0.1:5000${chart.url}`}
@@ -515,6 +545,41 @@ const AnalyticsDashboard = () => {
                                   Failed to load chart image
                                 </Typography>
                               </Box>
+                              
+                              {/* AI Explanation */}
+                              {chart.ai_explanation && (
+                                <Box sx={{
+                                  backgroundColor: '#f0f7ff',
+                                  border: '1px solid #2196f3',
+                                  borderRadius: 1,
+                                  p: 2,
+                                  mt: 2
+                                }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Box sx={{
+                                      backgroundColor: '#2196f3',
+                                      color: 'white',
+                                      borderRadius: '50%',
+                                      width: 24,
+                                      height: 24,
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      fontSize: '0.8rem',
+                                      fontWeight: 'bold',
+                                      mr: 1
+                                    }}>
+                                      AI
+                                    </Box>
+                                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                                      AI Analysis
+                                    </Typography>
+                                  </Box>
+                                  <Typography variant="body2" sx={{ color: '#333', lineHeight: 1.6 }}>
+                                    {chart.ai_explanation}
+                                  </Typography>
+                                </Box>
+                              )}
                             </Paper>
                           </Grid>
                         ))}
