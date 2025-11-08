@@ -22,6 +22,15 @@ class ChartGenerator:
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
     
+    def _sanitize_filename(self, name: str) -> str:
+        """Sanitize filename by removing special characters"""
+        import re
+        # Replace problematic characters with underscores
+        sanitized = re.sub(r'[^\w\s-]', '_', name)
+        # Replace multiple underscores/spaces with single underscore
+        sanitized = re.sub(r'[\s_]+', '_', sanitized)
+        return sanitized
+    
     def _load_imports(self):
         """Lazy loading of heavy libraries"""
         if not self._imports_loaded:
@@ -84,7 +93,8 @@ class ChartGenerator:
         
         # Histograms for each numeric variable
         for col in numeric_cols[:6]:  # Limit to first 6 to avoid too many charts
-            chart_path = f"{self.output_dir}/histogram_{col}_{filename}.png"
+            safe_col = self._sanitize_filename(col)
+            chart_path = os.path.join(self.output_dir, f"histogram_{safe_col}_{filename}.png")
             
             self.plt.figure(figsize=(10, 6))
             self.plt.hist(df[col].dropna(), bins=30, alpha=0.7, color='skyblue', edgecolor='black')
@@ -99,15 +109,15 @@ class ChartGenerator:
             charts.append({
                 'type': 'histogram',
                 'title': f'Distribution of {col}',
-                'url': f'/visuals/histogram_{col}_{filename}.png',
-                'filename': f'histogram_{col}_{filename}.png',
+                'url': f'/visuals/histogram_{safe_col}_{filename}.png',
+                'filename': f'histogram_{safe_col}_{filename}.png',
                 'variables': [col],
                 'description': f'Frequency distribution of {col} values'
             })
         
         # Box plots for numeric variables
         if len(numeric_cols) > 1:
-            chart_path = f"{self.output_dir}/boxplot_comparison_{filename}.png"
+            chart_path = os.path.join(self.output_dir, f"boxplot_comparison_{filename}.png")
             
             self.plt.figure(figsize=(12, 8))
             # Normalize data for comparison if scales are very different
@@ -142,7 +152,8 @@ class ChartGenerator:
             
             if len(value_counts) > 1:
                 # Bar chart
-                chart_path = f"{self.output_dir}/bar_{col}_{filename}.png"
+                safe_col = self._sanitize_filename(col)
+                chart_path = os.path.join(self.output_dir, f"bar_{safe_col}_{filename}.png")
                 
                 self.plt.figure(figsize=(12, 6))
                 bars = self.plt.bar(range(len(value_counts)), value_counts.values, 
@@ -165,15 +176,16 @@ class ChartGenerator:
                 charts.append({
                     'type': 'bar',
                     'title': f'Distribution of {col}',
-                    'url': f'/visuals/bar_{col}_{filename}.png',
-                    'filename': f'bar_{col}_{filename}.png',
+                    'url': f'/visuals/bar_{safe_col}_{filename}.png',
+                    'filename': f'bar_{safe_col}_{filename}.png',
                     'variables': [col],
                     'description': f'Frequency distribution of {col} categories'
                 })
                 
                 # Pie chart if reasonable number of categories
                 if 2 <= len(value_counts) <= 8:
-                    chart_path = f"{self.output_dir}/pie_{col}_{filename}.png"
+                    safe_col = self._sanitize_filename(col)
+                    chart_path = os.path.join(self.output_dir, f"pie_{safe_col}_{filename}.png")
                     
                     self.plt.figure(figsize=(10, 8))
                     colors = self.plt.cm.Set3(self.np.linspace(0, 1, len(value_counts)))
@@ -194,8 +206,8 @@ class ChartGenerator:
                     charts.append({
                         'type': 'pie',
                         'title': f'Proportion of {col}',
-                        'url': f'/visuals/pie_{col}_{filename}.png',
-                        'filename': f'pie_{col}_{filename}.png',
+                        'url': f'/visuals/pie_{safe_col}_{filename}.png',
+                        'filename': f'pie_{safe_col}_{filename}.png',
                         'variables': [col],
                         'description': f'Proportional distribution of {col} categories'
                     })
@@ -212,7 +224,9 @@ class ChartGenerator:
         if len(numeric_cols) >= 2:
             for i, col1 in enumerate(numeric_cols[:3]):  # Limit combinations
                 for col2 in numeric_cols[i+1:4]:
-                    chart_path = f"{self.output_dir}/scatter_{col1}_vs_{col2}_{filename}.png"
+                    safe_col1 = self._sanitize_filename(col1)
+                    safe_col2 = self._sanitize_filename(col2)
+                    chart_path = os.path.join(self.output_dir, f"scatter_{safe_col1}_vs_{safe_col2}_{filename}.png")
                     
                     self.plt.figure(figsize=(10, 8))
                     self.plt.scatter(df[col1], df[col2], alpha=0.6, s=50)
@@ -233,8 +247,8 @@ class ChartGenerator:
                     charts.append({
                         'type': 'scatter',
                         'title': f'{col1} vs {col2}',
-                        'url': f'/visuals/scatter_{col1}_vs_{col2}_{filename}.png',
-                        'filename': f'scatter_{col1}_vs_{col2}_{filename}.png',
+                        'url': f'/visuals/scatter_{safe_col1}_vs_{safe_col2}_{filename}.png',
+                        'filename': f'scatter_{safe_col1}_vs_{safe_col2}_{filename}.png',
                         'variables': [col1, col2],
                         'description': f'Relationship between {col1} and {col2}'
                     })
@@ -244,7 +258,9 @@ class ChartGenerator:
             for cat_col in categorical_cols[:2]:
                 for num_col in numeric_cols[:2]:
                     if df[cat_col].nunique() <= 10:  # Reasonable number of categories
-                        chart_path = f"{self.output_dir}/boxplot_{cat_col}_vs_{num_col}_{filename}.png"
+                        safe_cat = self._sanitize_filename(cat_col)
+                        safe_num = self._sanitize_filename(num_col)
+                        chart_path = os.path.join(self.output_dir, f"boxplot_{safe_cat}_vs_{safe_num}_{filename}.png")
                         
                         self.plt.figure(figsize=(12, 8))
                         df.boxplot(column=num_col, by=cat_col, figsize=(12, 8))
@@ -261,8 +277,8 @@ class ChartGenerator:
                         charts.append({
                             'type': 'boxplot_grouped',
                             'title': f'{num_col} by {cat_col}',
-                            'url': f'/visuals/boxplot_{cat_col}_vs_{num_col}_{filename}.png',
-                            'filename': f'boxplot_{cat_col}_vs_{num_col}_{filename}.png',
+                            'url': f'/visuals/boxplot_{safe_cat}_vs_{safe_num}_{filename}.png',
+                            'filename': f'boxplot_{safe_cat}_vs_{safe_num}_{filename}.png',
                             'variables': [cat_col, num_col],
                             'description': f'Distribution of {num_col} across {cat_col} categories'
                         })
@@ -276,7 +292,7 @@ class ChartGenerator:
         
         if len(numeric_cols) > 1:
             # Violin plots for distribution comparison
-            chart_path = f"{self.output_dir}/violin_distributions_{filename}.png"
+            chart_path = os.path.join(self.output_dir, f"violin_distributions_{filename}.png")
             
             self.plt.figure(figsize=(14, 8))
             # Normalize data for comparison
@@ -312,7 +328,7 @@ class ChartGenerator:
         
         if len(numeric_cols) > 1:
             # Correlation heatmap
-            chart_path = f"{self.output_dir}/correlation_heatmap_{filename}.png"
+            chart_path = os.path.join(self.output_dir, f"correlation_heatmap_{filename}.png")
             
             self.plt.figure(figsize=(12, 10))
             correlation_matrix = df[numeric_cols].corr()

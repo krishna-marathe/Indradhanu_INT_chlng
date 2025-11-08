@@ -16,7 +16,7 @@ class GeocodingService:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Indradhanu-Analytics/1.0 (Environmental Data Analysis)'
+            'User-Agent': 'Climate-Sphere/1.0 (Environmental Data Analysis)'
         })
         self.last_request_time = 0
         self.min_request_interval = 1.0  # Nominatim requires 1 second between requests

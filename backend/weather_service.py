@@ -17,7 +17,7 @@ class WeatherService:
     def __init__(self):
         self.session = requests.Session()
         self.session.headers.update({
-            'User-Agent': 'Indradhanu-Analytics/1.0'
+            'User-Agent': 'Climate-Sphere/1.0'
         })
     
     def get_weather_data(self, latitude: float, longitude: float, hours_back: int = 6) -> Dict[str, Any]:

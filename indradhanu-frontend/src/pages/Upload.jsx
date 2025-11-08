@@ -5,11 +5,9 @@ import {
   Typography,
   Box,
   Paper,
-  Grid,
   Toolbar
 } from '@mui/material';
 import FileUpload from '../components/FileUpload';
-import ResearchPaperUploader from '../components/ResearchPaperUploader';
 import { toast } from 'react-toastify';
 
 const Upload = () => {
@@ -29,41 +27,57 @@ const Upload = () => {
       {/* Add toolbar spacing for fixed navbar */}
       <Toolbar />
       
-      <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ mb: 4 }}>
-          📊 Upload & Analyze Your Data
-        </Typography>
-        <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
-          Upload environmental datasets or research documents for comprehensive analysis and insights
-        </Typography>
+      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
+        <Box
+          sx={{
+            textAlign: 'center',
+            mb: 5,
+            animation: 'fadeIn 0.6s ease-out',
+            '@keyframes fadeIn': {
+              from: { opacity: 0, transform: 'translateY(-20px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
+          <Typography 
+            variant="h3" 
+            component="h1" 
+            gutterBottom 
+            sx={{ 
+              fontWeight: 700,
+              background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              mb: 2,
+            }}
+          >
+            📊 Upload & Analyze Your Data
+          </Typography>
+          <Typography 
+            variant="h6" 
+            align="center" 
+            color="text.secondary" 
+            sx={{ 
+              maxWidth: 600, 
+              mx: 'auto',
+              lineHeight: 1.6,
+            }}
+          >
+            Upload CSV, Excel, or JSON files for comprehensive data visualization and statistical analysis
+          </Typography>
+        </Box>
         
-        <Grid container spacing={4}>
-          {/* Dataset Uploader */}
-          <Grid item xs={12} lg={6}>
-            <Paper sx={{ p: 4, height: 'fit-content' }}>
-              <Typography variant="h5" component="h2" gutterBottom align="center">
-                📈 Dataset Analysis
-              </Typography>
-              <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
-                Upload CSV, Excel, or JSON files for data visualization and statistical analysis
-              </Typography>
-              <FileUpload onUploadSuccess={handleUploadSuccess} />
-            </Paper>
-          </Grid>
-          
-          {/* Research Paper Uploader */}
-          <Grid item xs={12} lg={6}>
-            <Paper sx={{ p: 4, height: 'fit-content' }}>
-              <Typography variant="h5" component="h2" gutterBottom align="center">
-                📚 Document Analysis
-              </Typography>
-              <Typography variant="body2" align="center" color="text.secondary" sx={{ mb: 3 }}>
-                Upload research papers, reports, or documents for content analysis and summarization
-              </Typography>
-              <ResearchPaperUploader />
-            </Paper>
-          </Grid>
-        </Grid>
+        <Paper 
+          elevation={4}
+          sx={{ 
+            p: 5,
+            borderRadius: 3,
+            background: 'linear-gradient(to bottom, #ffffff 0%, #f5f7fa 100%)',
+          }}
+        >
+          <FileUpload onUploadSuccess={handleUploadSuccess} />
+        </Paper>
       </Container>
     </Box>
   );

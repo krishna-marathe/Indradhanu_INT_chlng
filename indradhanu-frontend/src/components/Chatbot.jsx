@@ -49,7 +49,7 @@ const Chatbot = () => {
 
     try {
       // Enhanced prompt for climate-focused responses
-      const prompt = `You are an AI Climate Expert Assistant for the Indradhanu Climate Intelligence Platform. 
+      const prompt = `You are an AI Climate Expert Assistant for the Climate Sphere Intelligence Platform. 
 Provide clear, data-driven insights on weather, crops, environmental conditions, climate trends, and disaster preparedness.
 Keep your answers concise, factual, and user-friendly. Use bullet points when listing multiple items.
 Focus on Indian climate context when relevant.

@@ -9,7 +9,6 @@ const Hero = () => {
     <Box
       sx={{
         minHeight: '100vh',
-        background: 'linear-gradient(135deg, #2c5aa0 0%, #1e3f73 100%)',
         display: 'flex',
         alignItems: 'center',
         color: 'white',
@@ -17,7 +16,32 @@ const Hero = () => {
         overflow: 'hidden',
       }}
     >
-      {/* Background pattern */}
+      {/* Background Video */}
+      <Box
+        component="video"
+        autoPlay
+        muted
+        loop
+        playsInline
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: -2,
+          opacity: 0,
+          animation: 'fadeIn 2s ease-in-out forwards',
+          '@keyframes fadeIn': {
+            to: { opacity: 1 },
+          },
+        }}
+      >
+        <source src="/8947-215890483.mp4" type="video/mp4" />
+      </Box>
+      
+      {/* Dark overlay for text readability */}
       <Box
         sx={{
           position: 'absolute',
@@ -25,8 +49,8 @@ const Hero = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          opacity: 0.1,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.1'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          zIndex: -1,
         }}
       />
       
@@ -58,26 +82,57 @@ const Hero = () => {
           analytics engine. Upload, analyze, and visualize climate data effortlessly.
         </Typography>
         
-        <Button
-          variant="contained"
-          size="large"
-          onClick={() => navigate('/upload')}
-          sx={{
-            backgroundColor: 'rgba(255, 255, 255, 0.2)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            color: 'white',
-            px: 4,
-            py: 1.5,
-            fontSize: '1.1rem',
-            fontWeight: 600,
-            '&:hover': {
-              backgroundColor: 'rgba(255, 255, 255, 0.3)',
-            },
-          }}
-        >
-          Start Analyzing
-        </Button>
+        <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => navigate('/upload')}
+            sx={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              backdropFilter: 'blur(10px)',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              color: 'white',
+              px: 5,
+              py: 2,
+              fontSize: '1.2rem',
+              fontWeight: 700,
+              borderRadius: 3,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.3)',
+                transform: 'translateY(-3px)',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+              },
+            }}
+          >
+            🚀 Start Analyzing
+          </Button>
+          
+          <Button
+            variant="outlined"
+            size="large"
+            onClick={() => navigate('/weather')}
+            sx={{
+              border: '2px solid rgba(255, 255, 255, 0.5)',
+              color: 'white',
+              px: 5,
+              py: 2,
+              fontSize: '1.2rem',
+              fontWeight: 700,
+              borderRadius: 3,
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                border: '2px solid rgba(255, 255, 255, 0.8)',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                transform: 'translateY(-3px)',
+                boxShadow: '0 10px 25px rgba(0,0,0,0.3)',
+              },
+            }}
+          >
+            🌤️ Weather Data
+          </Button>
+        </Box>
       </Container>
     </Box>
   );

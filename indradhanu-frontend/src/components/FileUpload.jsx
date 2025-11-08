@@ -180,53 +180,111 @@ const FileUpload = ({ onUploadSuccess }) => {
 
       <Paper
         {...getRootProps()}
+        elevation={isDragActive ? 8 : 2}
         sx={{
-          p: 4,
-          border: '2px dashed',
+          p: 5,
+          border: '3px dashed',
           borderColor: isDragActive ? 'primary.main' : 'grey.300',
-          backgroundColor: isDragActive ? 'action.hover' : 'background.paper',
+          backgroundColor: isDragActive ? 'primary.light' : 'background.paper',
           cursor: 'pointer',
           textAlign: 'center',
-          transition: 'all 0.3s ease',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: isDragActive ? 'scale(1.02)' : 'scale(1)',
           '&:hover': {
             borderColor: 'primary.main',
             backgroundColor: 'action.hover',
+            transform: 'scale(1.01)',
+            boxShadow: 6,
           },
         }}
       >
         <input {...getInputProps()} />
-        <CloudUpload sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+        <Box
+          sx={{
+            animation: isDragActive ? 'pulse 1s infinite' : 'none',
+            '@keyframes pulse': {
+              '0%, 100%': { transform: 'scale(1)' },
+              '50%': { transform: 'scale(1.1)' },
+            },
+          }}
+        >
+          <CloudUpload 
+            sx={{ 
+              fontSize: 64, 
+              color: isDragActive ? 'primary.dark' : 'primary.main', 
+              mb: 2,
+              transition: 'all 0.3s ease',
+            }} 
+          />
+        </Box>
         
         {isDragActive ? (
-          <Typography variant="h6" color="primary">
-            Drop the file here...
+          <Typography variant="h5" color="primary.dark" fontWeight="bold">
+            📂 Drop the file here...
           </Typography>
         ) : (
           <>
-            <Typography variant="h6" gutterBottom>
+            <Typography variant="h5" gutterBottom fontWeight="600">
               Drag and drop your file here
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" sx={{ mb: 2 }}>
               or click to browse files
+            </Typography>
+            <Typography variant="caption" color="text.secondary" display="block">
+              Maximum file size: 100MB
             </Typography>
           </>
         )}
         
-        <Box sx={{ mt: 2 }}>
-          <Chip label="CSV" size="small" sx={{ mr: 1 }} />
-          <Chip label="XLSX" size="small" sx={{ mr: 1 }} />
-          <Chip label="JSON" size="small" />
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center', gap: 1 }}>
+          <Chip 
+            label="CSV" 
+            size="medium" 
+            color="primary" 
+            variant="outlined"
+            sx={{ fontWeight: 600 }}
+          />
+          <Chip 
+            label="XLSX" 
+            size="medium" 
+            color="primary" 
+            variant="outlined"
+            sx={{ fontWeight: 600 }}
+          />
+          <Chip 
+            label="JSON" 
+            size="medium" 
+            color="primary" 
+            variant="outlined"
+            sx={{ fontWeight: 600 }}
+          />
         </Box>
       </Paper>
 
       {selectedFile && (
-        <Paper sx={{ p: 2, mt: 2, backgroundColor: 'success.light', color: 'success.contrastText' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CheckCircle />
+        <Paper 
+          elevation={3}
+          sx={{ 
+            p: 3, 
+            mt: 3, 
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            borderRadius: 2,
+            animation: 'slideIn 0.3s ease-out',
+            '@keyframes slideIn': {
+              from: { opacity: 0, transform: 'translateY(-10px)' },
+              to: { opacity: 1, transform: 'translateY(0)' },
+            },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <CheckCircle sx={{ fontSize: 40 }} />
             <Box sx={{ flexGrow: 1 }}>
-              <Typography variant="subtitle1">{selectedFile.name}</Typography>
-              <Typography variant="body2">
-                {formatFileSize(selectedFile.size)}
+              <Typography variant="h6" fontWeight="600">
+                {selectedFile.name}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                📦 {formatFileSize(selectedFile.size)}
               </Typography>
             </Box>
           </Box>
@@ -263,7 +321,7 @@ const FileUpload = ({ onUploadSuccess }) => {
         </Box>
       )}
 
-      <Box sx={{ display: 'flex', gap: 2, mt: 3 }}>
+      <Box sx={{ display: 'flex', gap: 2, mt: 4 }}>
         <Button
           variant="contained"
           size="large"
@@ -271,8 +329,24 @@ const FileUpload = ({ onUploadSuccess }) => {
           onClick={handleUpload}
           disabled={!selectedFile || uploading || !backendConnected}
           startIcon={uploading ? null : <CloudUpload />}
+          sx={{
+            py: 1.5,
+            fontSize: '1.1rem',
+            fontWeight: 600,
+            background: 'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+            boxShadow: '0 3px 5px 2px rgba(33, 203, 243, .3)',
+            transition: 'all 0.3s ease',
+            '&:hover': {
+              background: 'linear-gradient(45deg, #1976D2 30%, #1CB5E0 90%)',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 10px 2px rgba(33, 203, 243, .4)',
+            },
+            '&:disabled': {
+              background: 'grey.300',
+            },
+          }}
         >
-          {uploading ? 'Analyzing...' : 'Upload & Analyze'}
+          {uploading ? '⚡ Analyzing...' : '🚀 Upload & Analyze'}
         </Button>
         
         {selectedFile && !uploading && (
@@ -280,6 +354,17 @@ const FileUpload = ({ onUploadSuccess }) => {
             variant="outlined"
             size="large"
             onClick={resetForm}
+            sx={{
+              py: 1.5,
+              px: 3,
+              fontSize: '1rem',
+              fontWeight: 600,
+              borderWidth: 2,
+              '&:hover': {
+                borderWidth: 2,
+                transform: 'translateY(-2px)',
+              },
+            }}
           >
             Reset
           </Button>

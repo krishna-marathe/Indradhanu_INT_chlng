@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Environmental Analysis Dashboard</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            margin-top: 0.5rem;
+        }
+        
+        .container {
+            padding: 1.5rem;
+            max-width: 1800px;
+            margin: 0 auto;
+        }
+        
+        .map-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .map-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+            height: 600px;
+            margin-bottom: 1.5rem;
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .controls-bar {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        
+        .controls-bar h2 {
+            margin: 0;
+            color: #667eea;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        
+        .controls-bar select,
+        .controls-bar button {
+            flex-shrink: 0;
+        }
+        
+        .heatmaps-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .heatmap-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .heatmap-container {
+            width: 100%;
+            height: 300px;
+            position: relative;
+        }
+        
+        .heatmap-title {
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        
+        .analytics-section {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #667eea;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            color: #6b7280;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .loading.active {
+            display: flex;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            flex-shrink: 0;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .analysis-text {
+            line-height: 1.6;
+            color: #4b5563;
+            white-space: pre-wrap;
+        }
+        
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+        
+        .instructions {
+            background: #eff6ff;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .instructions ul {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .instructions li {
+            margin: 0.5rem 0;
+        }
+        
+        @media (max-width: 1200px) {
+            .map-container {
+                height: 400px;
+            }
+            
+            .controls-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .controls-bar h2 {
+                text-align: center;
+            }
+            
+            .controls-bar select,
+            .controls-bar button {
+                width: 100%;
+            }
+            
+            .heatmaps-section {
+                grid-template-columns: 1fr;
+            }
+            
+            .analytics-section {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌍 Environmental Analysis Dashboard</h1>
+        <p>AI-powered environmental insights with interactive map selection</p>
+    </div>
+    
+    <div class="container">
+        <!-- Map Section -->
+        <div class="map-section">
+            <div class="map-container">
+                <div id="map"></div>
+            </div>
+            
+            <!-- Controls Bar -->
+            <div class="controls-bar">
+                <h2>📍 Analysis Controls:</h2>
+                <span style="color: #6b7280; font-size: 0.9rem;">Draw area on map →</span>
+                <select id="analysisType" style="padding: 0.75rem; border-radius: 6px; border: 1px solid #e5e7eb; font-size: 0.95rem; min-width: 200px;">
+                    <option value="current">Current Analysis</option>
+                    <option value="historical">Historical Trends (2015-2024)</option>
+                    <option value="seasonal">Seasonal Patterns</option>
+                </select>
+                <button id="analyzeBtn" class="btn" style="padding: 0.75rem 2rem;" disabled>
+                    Analyze Selected Area
+                </button>
+                <button id="exportBtn" class="btn" style="padding: 0.75rem 1.5rem; background: #2196f3;" disabled>
+                    Export Data (CSV)
+                </button>
+                <div class="loading" id="loading" style="margin-left: auto;">
+                    <div class="spinner"></div>
+                    <p style="margin: 0;">Analyzing...</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Heatmaps Section -->
+        <div id="heatmapsSection" class="heatmaps-section" style="display: none;">
+            <div class="heatmap-card">
+                <div class="heatmap-title">🌱 NDVI (Vegetation Health)</div>
+                <div id="ndviHeatmap" class="heatmap-container"></div>
+            </div>
+            <div class="heatmap-card">
+                <div class="heatmap-title">🌡️ Land Surface Temperature</div>
+                <div id="tempHeatmap" class="heatmap-container"></div>
+            </div>
+            <div class="heatmap-card">
+                <div class="heatmap-title">💧 Precipitation</div>
+                <div id="precipHeatmap" class="heatmap-container"></div>
+            </div>
+            <div class="heatmap-card">
+                <div class="heatmap-title">💨 Air Quality (CO)</div>
+                <div id="coHeatmap" class="heatmap-container"></div>
+            </div>
+        </div>
+        
+        <!-- Analytics Section -->
+        <div id="analyticsSection" class="analytics-section" style="display: none;">
+            <!-- AI Analysis - Full Width, Prominent -->
+            <div class="card" id="analysisCard" style="display: none; grid-column: 1 / -1;">
+                <h2 style="font-size: 1.4rem; margin-bottom: 1.5rem;">🤖 AI-Powered Environmental Analysis</h2>
+                <div id="analysis"></div>
+            </div>
+            
+            <!-- Metrics and Charts Side by Side -->
+            <div class="card" id="metricsCard">
+                <h2>📊 Environmental Metrics</h2>
+                <div id="metrics"></div>
+            </div>
+            
+            <div class="card" id="chartsCard" style="display: none;">
+                <h2>📈 Trends & Insights</h2>
+                <div id="charts"></div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Initialize map
+        const map = L.map('map').setView([20, 0], 2);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 18
+        }).addTo(map);
+        
+        // Drawing controls
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+        
+        const drawControl = new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            },
+            draw: {
+                polygon: true,
+                rectangle: true,
+                circle: false,
+                circlemarker: false,
+                marker: false,
+                polyline: false
+            }
+        });
+        map.addControl(drawControl);
+        
+        let currentGeometry = null;
+        
+        // Handle drawing
+        map.on(L.Draw.Event.CREATED, function(e) {
+            drawnItems.clearLayers();
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+            
+            // Get GeoJSON
+            const geoJSON = layer.toGeoJSON();
+            currentGeometry = geoJSON.geometry;
+            
+            document.getElementById('analyzeBtn').disabled = false;
+            document.getElementById('exportBtn').disabled = false;
+        });
+        
+        map.on(L.Draw.Event.DELETED, function(e) {
+            currentGeometry = null;
+            document.getElementById('analyzeBtn').disabled = true;
+            document.getElementById('exportBtn').disabled = true;
+            hideResults();
+        });
+        
+        // Analyze button
+        document.getElementById('analyzeBtn').addEventListener('click', async function() {
+            if (!currentGeometry) {
+                alert('Please draw an area on the map first');
+                return;
+            }
+            
+            const analysisType = document.getElementById('analysisType').value;
+            
+            showLoading();
+            hideResults();
+            
+            try {
+                let endpoint = '/api/analyze';
+                let requestBody = { geometry: currentGeometry };
+                
+                if (analysisType === 'historical') {
+                    endpoint = '/api/historical-trends';
+                    requestBody.start_year = 2015;
+                    requestBody.end_year = 2024;
+                } else if (analysisType === 'seasonal') {
+                    endpoint = '/api/seasonal-analysis';
+                    requestBody.years = 5;
+                }
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                
+                if (data.success || data.environmental_data) {
+                    if (analysisType === 'historical') {
+                        displayHistoricalResults(data);
+                    } else if (analysisType === 'seasonal') {
+                        displaySeasonalResults(data);
+                    } else {
+                        displayResults(data);
+                    }
+                } else {
+                    showError(data.error || 'Analysis failed');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        });
+        
+        // Export button
+        document.getElementById('exportBtn').addEventListener('click', async function() {
+            if (!currentGeometry) {
+                alert('Please analyze an area first');
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/export-data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        geometry: currentGeometry,
+                        format: 'csv'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // Download CSV
+                    const blob = new Blob([result.data], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'environmental_data.csv';
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                } else {
+                    alert('Export failed: ' + result.error);
+                }
+            } catch (error) {
+                alert('Export error: ' + error.message);
+            }
+        });
+        
+        function showLoading() {
+            document.getElementById('loading').classList.add('active');
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('active');
+        }
+        
+        function hideResults() {
+            document.getElementById('heatmapsSection').style.display = 'none';
+            document.getElementById('analyticsSection').style.display = 'none';
+            document.getElementById('metricsCard').style.display = 'none';
+            document.getElementById('chartsCard').style.display = 'none';
+            document.getElementById('analysisCard').style.display = 'none';
+            
+            // Remove insights card if it exists
+            const insightsCard = document.getElementById('insightsCard');
+            if (insightsCard) {
+                insightsCard.remove();
+            }
+            
+            // Clear heatmaps
+            clearHeatmaps();
+        }
+        
+        let heatmapLayers = [];
+        
+        let currentCharts = [];
+        
+        function generateAdvancedMetrics(envData) {
+            let html = '';
+            
+            // Land Use Change
+            if (envData.land_use_change) {
+                const luc = envData.land_use_change;
+                html += `
+                    <div class="metric">
+                        <span class="metric-label">Land Use Change</span>
+                        <span class="metric-value">${luc.changed ? 
+                            `Changed: ${luc.past} → ${luc.recent}` : 
+                            'No Change'}</span>
+                    </div>
+                `;
+            }
+            
+            // Urban Heat Island
+            if (envData.urban_heat_island) {
+                const uhi = envData.urban_heat_island;
+                html += `
+                    <div class="metric">
+                        <span class="metric-label">Urban Heat Island</span>
+                        <span class="metric-value">${uhi.intensity}°C intensity</span>
+                    </div>
+                `;
+            }
+            
+            // Water Body Change
+            if (envData.water_body_change) {
+                const water = envData.water_body_change;
+                html += `
+                    <div class="metric">
+                        <span class="metric-label">Water Occurrence</span>
+                        <span class="metric-value">${water.water_occurrence}% (${water.status})</span>
+                    </div>
+                `;
+            }
+            
+            // Rainfall Trend
+            if (envData.rainfall_trend) {
+                const rain = envData.rainfall_trend;
+                html += `
+                    <div class="metric">
+                        <span class="metric-label">5-Year Rainfall Trend</span>
+                        <span class="metric-value">${rain.trend} (${rain.change_rate > 0 ? '+' : ''}${rain.change_rate}mm/yr)</span>
+                    </div>
+                `;
+            }
+            
+            // Vulnerability
+            if (envData.vulnerability) {
+                const vuln = envData.vulnerability;
+                const droughtColor = vuln.drought_risk === 'high' ? '#f44336' : 
+                                    vuln.drought_risk === 'moderate' ? '#ff9800' : '#4caf50';
+                const floodColor = vuln.flood_risk === 'high' ? '#f44336' : 
+                                  vuln.flood_risk === 'moderate' ? '#ff9800' : '#4caf50';
+                
+                html += `
+                    <div class="metric">
+                        <span class="metric-label">Drought Risk</span>
+                        <span class="metric-value" style="color: ${droughtColor}; font-weight: bold;">
+                            ${vuln.drought_risk.toUpperCase()}
+                        </span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">Flood Risk</span>
+                        <span class="metric-value" style="color: ${floodColor}; font-weight: bold;">
+                            ${vuln.flood_risk.toUpperCase()}
+                        </span>
+                    </div>
+                `;
+            }
+            
+            // If no advanced metrics available
+            if (html === '') {
+                html = '<div style="color: #6b7280; font-size: 0.9rem; padding: 0.5rem;">Advanced climate data being processed...</div>';
+            }
+            
+            return html;
+        }
+        
+        function displayResults(data) {
+            const envData = data.environmental_data;
+            const analysis = data.raw_analysis;
+            
+            // Debug logging
+            console.log('Environmental Data:', envData);
+            console.log('Land Use Change:', envData.land_use_change);
+            console.log('Urban Heat Island:', envData.urban_heat_island);
+            console.log('Water Body Change:', envData.water_body_change);
+            console.log('Rainfall Trend:', envData.rainfall_trend);
+            console.log('Vulnerability:', envData.vulnerability);
+            
+            // Display metrics
+            const metricsHTML = `
+                <h3 style="font-size: 0.9rem; color: #667eea; margin-bottom: 0.5rem; margin-top: 0;">Vegetation & Climate</h3>
+                <div class="metric">
+                    <span class="metric-label">NDVI (Vegetation Health)</span>
+                    <span class="metric-value">${envData.ndvi || 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Land Surface Temp</span>
+                    <span class="metric-value">${envData.temperature ? envData.temperature + '°C' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Air Temperature</span>
+                    <span class="metric-value">${envData.air_temperature ? envData.air_temperature + '°C' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Precipitation (Total)</span>
+                    <span class="metric-value">${envData.precipitation ? envData.precipitation + ' mm' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Land Cover Type</span>
+                    <span class="metric-value">${envData.land_cover || 'N/A'}</span>
+                </div>
+                
+                <h3 style="font-size: 0.9rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Air Quality & Pollution</h3>
+                <div class="metric">
+                    <span class="metric-label">CO (Carbon Monoxide)</span>
+                    <span class="metric-value">${envData.co_concentration ? envData.co_concentration.toExponential(2) + ' mol/m²' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">NO₂ (Nitrogen Dioxide)</span>
+                    <span class="metric-value">${envData.no2 ? envData.no2.toExponential(2) + ' mol/m²' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">SO₂ (Sulfur Dioxide)</span>
+                    <span class="metric-value">${envData.so2 ? envData.so2.toExponential(2) + ' mol/m²' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">O₃ (Ozone)</span>
+                    <span class="metric-value">${envData.ozone ? envData.ozone.toFixed(4) + ' mol/m²' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Aerosol Index</span>
+                    <span class="metric-value">${envData.aerosol || 'N/A'}</span>
+                </div>
+                
+                <h3 style="font-size: 0.9rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Soil & Water</h3>
+                <div class="metric">
+                    <span class="metric-label">Soil Moisture</span>
+                    <span class="metric-value">${envData.soil_moisture ? envData.soil_moisture + ' %' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Evapotranspiration</span>
+                    <span class="metric-value">${envData.evapotranspiration ? envData.evapotranspiration + ' mm' : 'N/A'}</span>
+                </div>
+                
+                <h3 style="font-size: 0.9rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Advanced Climate Analysis</h3>
+                ${generateAdvancedMetrics(envData)}
+                
+                <h3 style="font-size: 0.9rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Area Info</h3>
+                <div class="metric">
+                    <span class="metric-label">Total Area</span>
+                    <span class="metric-value">${envData.area ? envData.area + ' km²' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Data Availability</span>
+                    <span class="metric-value">${envData.data_availability || 'N/A'}</span>
+                </div>
+            `;
+            
+            document.getElementById('metrics').innerHTML = metricsHTML;
+            document.getElementById('metricsCard').style.display = 'block';
+            document.getElementById('analyticsSection').style.display = 'grid';
+            
+            // Load heatmaps
+            loadHeatmaps(currentGeometry);
+            
+            // Create current data visualization
+            createCurrentDataChart(envData);
+            
+            // Display real-time insights
+            if (data.ai_analysis) {
+                displayRealTimeInsights(data.ai_analysis);
+            }
+            
+            // Display detailed AI analysis
+            if (data.raw_analysis) {
+                displayDetailedAnalysis(data.raw_analysis);
+            }
+        }
+        
+        function displayDetailedAnalysis(analysisText) {
+            // Parse the analysis text into sections
+            const sections = parseAnalysisSections(analysisText);
+            
+            let analysisHTML = '';
+            
+            // Executive Summary (highlighted)
+            if (sections.summary) {
+                analysisHTML += `
+                    <div style="background: linear-gradient(135deg, #667eea20, #764ba220); 
+                                padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;
+                                border-left: 4px solid #667eea;">
+                        <h3 style="margin: 0 0 0.75rem 0; color: #667eea; font-size: 1.1rem;">
+                            📋 Executive Summary
+                        </h3>
+                        <div style="font-size: 1rem; line-height: 1.6; color: #333;">
+                            ${sections.summary}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Other sections in expandable cards
+            const sectionIcons = {
+                'vegetation': '🌱',
+                'climate': '🌡️',
+                'air': '💨',
+                'risks': '⚠️',
+                'recommendations': '💡'
+            };
+            
+            Object.keys(sections).forEach(key => {
+                if (key !== 'summary' && sections[key]) {
+                    const icon = sectionIcons[key] || '📊';
+                    const title = key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' ');
+                    
+                    analysisHTML += `
+                        <div style="background: white; border: 1px solid #e5e7eb; 
+                                    border-radius: 8px; margin-bottom: 1rem; overflow: hidden;">
+                            <div style="background: #f9fafb; padding: 1rem; 
+                                        border-bottom: 1px solid #e5e7eb; cursor: pointer;"
+                                 onclick="toggleSection('${key}')">
+                                <h4 style="margin: 0; color: #374151; font-size: 1rem; 
+                                           display: flex; align-items: center; gap: 0.5rem;">
+                                    <span>${icon}</span>
+                                    <span>${title}</span>
+                                    <span id="${key}-arrow" style="margin-left: auto; transition: transform 0.3s;">▼</span>
+                                </h4>
+                            </div>
+                            <div id="${key}-content" style="padding: 1rem; line-height: 1.6; 
+                                                            color: #4b5563; display: block;">
+                                ${formatAnalysisContent(sections[key])}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            // If no sections found, show raw text
+            if (Object.keys(sections).length === 0) {
+                analysisHTML = `<div class="analysis-text" style="line-height: 1.8;">${analysisText}</div>`;
+            }
+            
+            document.getElementById('analysis').innerHTML = analysisHTML;
+            document.getElementById('analysisCard').style.display = 'block';
+        }
+        
+        function parseAnalysisSections(text) {
+            const sections = {};
+            
+            // Try to parse structured sections
+            const summaryMatch = text.match(/(?:EXECUTIVE SUMMARY|Summary)[:\s]*([\s\S]*?)(?=\n\n|\*\*|$)/i);
+            if (summaryMatch) sections.summary = summaryMatch[1].trim();
+            
+            const vegetationMatch = text.match(/(?:VEGETATION|ECOSYSTEM)[:\s]*([\s\S]*?)(?=\n\n\*\*|$)/i);
+            if (vegetationMatch) sections.vegetation = vegetationMatch[1].trim();
+            
+            const climateMatch = text.match(/(?:CLIMATE|WATER)[:\s]*([\s\S]*?)(?=\n\n\*\*|$)/i);
+            if (climateMatch) sections.climate = climateMatch[1].trim();
+            
+            const airMatch = text.match(/(?:AIR QUALITY|POLLUTION)[:\s]*([\s\S]*?)(?=\n\n\*\*|$)/i);
+            if (airMatch) sections.air = airMatch[1].trim();
+            
+            const risksMatch = text.match(/(?:RISKS|CONCERNS)[:\s]*([\s\S]*?)(?=\n\n\*\*|$)/i);
+            if (risksMatch) sections.risks = risksMatch[1].trim();
+            
+            const recsMatch = text.match(/(?:RECOMMENDATIONS|ACTIONS)[:\s]*([\s\S]*?)(?=\n\n\*\*|$)/i);
+            if (recsMatch) sections.recommendations = recsMatch[1].trim();
+            
+            return sections;
+        }
+        
+        function formatAnalysisContent(content) {
+            // Convert markdown-style formatting to HTML
+            content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            content = content.replace(/\n- /g, '<br>• ');
+            content = content.replace(/\n\d+\. /g, '<br>');
+            content = content.replace(/\n\n/g, '<br><br>');
+            return content;
+        }
+        
+        function toggleSection(sectionId) {
+            const content = document.getElementById(`${sectionId}-content`);
+            const arrow = document.getElementById(`${sectionId}-arrow`);
+            
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'none';
+                arrow.style.transform = 'rotate(-90deg)';
+            }
+        }
+        
+        async function loadHeatmaps(geometry) {
+            try {
+                const response = await fetch('/api/heatmap-tiles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        geometry: geometry,
+                        parameters: ['ndvi', 'temperature', 'precipitation', 'co']
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('heatmapsSection').style.display = 'grid';
+                    
+                    // Create individual heatmap displays
+                    createHeatmapDisplay('ndviHeatmap', data.tiles.ndvi, data.center);
+                    createHeatmapDisplay('tempHeatmap', data.tiles.temperature, data.center);
+                    createHeatmapDisplay('precipHeatmap', data.tiles.precipitation, data.center);
+                    createHeatmapDisplay('coHeatmap', data.tiles.co, data.center);
+                }
+            } catch (error) {
+                console.error('Heatmap loading error:', error);
+            }
+        }
+        
+        function createHeatmapDisplay(containerId, tileData, center) {
+            if (!tileData) return;
+            
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            // Create Leaflet map for this heatmap
+            const heatmap = L.map(containerId, {
+                center: [center.lat, center.lng],
+                zoom: 10,
+                zoomControl: true,
+                attributionControl: false
+            });
+            
+            // Add base layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                opacity: 0.3
+            }).addTo(heatmap);
+            
+            // Add Earth Engine tile layer
+            const eeLayer = L.tileLayer(tileData.tile_fetcher.url_format, {
+                attribution: 'Google Earth Engine'
+            }).addTo(heatmap);
+            
+            heatmapLayers.push(heatmap);
+        }
+        
+        function clearHeatmaps() {
+            heatmapLayers.forEach(map => {
+                map.remove();
+            });
+            heatmapLayers = [];
+        }
+        
+        function displayRealTimeInsights(aiAnalysis) {
+            if (!aiAnalysis || !aiAnalysis.structured_insights) return;
+            
+            const insights = aiAnalysis.structured_insights;
+            const alerts = aiAnalysis.alerts || [];
+            const healthScore = aiAnalysis.health_score || {};
+            
+            let insightsHTML = '';
+            
+            // Health Score
+            if (healthScore.score !== null) {
+                const scoreColor = healthScore.score >= 80 ? '#4caf50' : 
+                                  healthScore.score >= 60 ? '#ff9800' : '#f44336';
+                insightsHTML += `
+                    <div style="background: linear-gradient(135deg, ${scoreColor}20, ${scoreColor}10); 
+                                padding: 1rem; border-radius: 8px; margin-bottom: 1rem; 
+                                border-left: 4px solid ${scoreColor};">
+                        <h3 style="margin: 0 0 0.5rem 0; color: ${scoreColor}; font-size: 1rem;">
+                            🌍 Environmental Health Score
+                        </h3>
+                        <div style="font-size: 2rem; font-weight: bold; color: ${scoreColor};">
+                            ${healthScore.score}/100
+                        </div>
+                        <div style="color: #6b7280; font-size: 0.9rem;">
+                            Grade: ${healthScore.grade}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Alerts
+            if (alerts.length > 0) {
+                insightsHTML += '<div style="margin-bottom: 1rem;">';
+                alerts.forEach(alert => {
+                    const alertColor = alert.level === 'critical' ? '#f44336' : '#ff9800';
+                    insightsHTML += `
+                        <div style="background: ${alertColor}20; padding: 0.75rem; 
+                                    border-radius: 6px; margin-bottom: 0.5rem; 
+                                    border-left: 3px solid ${alertColor};">
+                            <strong style="color: ${alertColor};">
+                                ${alert.level === 'critical' ? '🚨' : '⚠️'} ${alert.category.toUpperCase()}:
+                            </strong>
+                            <span style="color: #333; margin-left: 0.5rem;">${alert.message}</span>
+                        </div>
+                    `;
+                });
+                insightsHTML += '</div>';
+            }
+            
+            // Vegetation Insights
+            if (insights.vegetation) {
+                const veg = insights.vegetation;
+                const statusColor = veg.status === 'excellent' ? '#4caf50' :
+                                   veg.status === 'good' ? '#8bc34a' :
+                                   veg.status === 'fair' ? '#ff9800' : '#f44336';
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #667eea; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            🌱 Vegetation Analysis
+                        </h4>
+                        <div style="background: ${statusColor}15; padding: 0.75rem; 
+                                    border-radius: 6px; border-left: 3px solid ${statusColor};">
+                            ${veg.message}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Climate Insights
+            if (insights.climate && insights.climate.insights.length > 0) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #667eea; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            🌡️ Climate Conditions
+                        </h4>
+                        ${insights.climate.insights.map(insight => `
+                            <div style="background: #f5f7fa; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                ${insight}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Air Quality Insights
+            if (insights.air_quality && insights.air_quality.insights.length > 0) {
+                const aqStatus = insights.air_quality.status;
+                const aqColor = aqStatus === 'good' ? '#4caf50' :
+                               aqStatus === 'moderate' ? '#ff9800' : '#f44336';
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #667eea; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            💨 Air Quality Status: <span style="color: ${aqColor};">${aqStatus.toUpperCase()}</span>
+                        </h4>
+                        ${insights.air_quality.insights.map(insight => `
+                            <div style="background: #f5f7fa; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                ${insight}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Water Insights
+            if (insights.water && insights.water.insights.length > 0) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #667eea; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            💧 Water & Soil Conditions
+                        </h4>
+                        ${insights.water.insights.map(insight => `
+                            <div style="background: #f5f7fa; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                ${insight}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Advanced Climate Insights
+            if (insights.advanced && insights.advanced.insights.length > 0) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #667eea; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            🌍 Advanced Climate Analysis
+                        </h4>
+                        ${insights.advanced.insights.map(insight => `
+                            <div style="background: #f5f7fa; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                ${insight}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Create insights card
+            const insightsCard = document.createElement('div');
+            insightsCard.className = 'card';
+            insightsCard.id = 'insightsCard';
+            insightsCard.innerHTML = `
+                <h2>💡 Real-Time Insights</h2>
+                ${insightsHTML}
+            `;
+            
+            // Insert before analysis card
+            const analysisCard = document.getElementById('analysisCard');
+            analysisCard.parentNode.insertBefore(insightsCard, analysisCard);
+        }
+        
+        function createCurrentDataChart(envData) {
+            // Clear existing charts
+            currentCharts.forEach(chart => chart.destroy());
+            currentCharts = [];
+
+            // Create a responsive grid of small charts for all numeric parameters
+            const numericKeys = Object.keys(envData).filter(k => typeof envData[k] === 'number' && k !== 'area');
+
+            if (numericKeys.length === 0) {
+                // fallback to previous two charts if no numeric keys
+                const chartsHTML = `
+                    <canvas id="airQualityChart" style="max-height: 300px; margin-bottom: 2rem;"></canvas>
+                    <canvas id="climateChart" style="max-height: 300px;"></canvas>
+                `;
+                document.getElementById('charts').innerHTML = chartsHTML;
+                document.getElementById('chartsCard').style.display = 'block';
+                return createCurrentDataChart({
+                    co2: envData.co2, no2: envData.no2, so2: envData.so2, co: envData.co, ozone: envData.ozone, aerosol: envData.aerosol,
+                    ndvi: envData.ndvi, soil_moisture: envData.soil_moisture, evapotranspiration: envData.evapotranspiration
+                });
+            }
+
+            // Build HTML: create a canvas for each numeric parameter
+            let chartsHTML = '<div style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 1rem;">';
+            numericKeys.forEach(key => {
+                chartsHTML += `<div style="background:#fff; padding:0.75rem; border-radius:8px;"><h4 style="margin:0 0 0.5rem 0; font-size:0.9rem; color:#667eea">${key.replace(/_/g, ' ').toUpperCase()}</h4><canvas id="chart_${key}"></canvas></div>`;
+            });
+            chartsHTML += '</div>';
+
+            document.getElementById('charts').innerHTML = chartsHTML;
+            document.getElementById('chartsCard').style.display = 'block';
+
+            // For each numeric key, create a small bar/gauge-like chart
+            numericKeys.forEach(key => {
+                try {
+                    const ctx = document.getElementById(`chart_${key}`).getContext('2d');
+                    const value = envData[key] || 0;
+                    // Normalize values for display where possible
+                    let displayValue = value;
+                    let max = Math.max(Math.abs(displayValue), 1);
+                    // Choose a reasonable max for known parameters
+                    if (key === 'ndvi') { displayValue = displayValue * 100; max = 100; }
+                    if (key === 'co2') { max = Math.max(420, Math.ceil(displayValue)); }
+                    if (key === 'no2' || key === 'so2' || key === 'co' || key === 'ozone') { displayValue = displayValue || 0; max = Math.max(0.0001, Math.abs(displayValue) * 1e6); }
+                    if (key === 'soil_moisture') { max = 100; }
+                    if (key === 'evapotranspiration') { max = Math.max(100, Math.ceil(Math.abs(displayValue))); }
+
+                    const chart = new Chart(ctx, {
+                        type: 'bar',
+                        data: {
+                            labels: [key.replace(/_/g, ' ')],
+                            datasets: [{
+                                label: key,
+                                data: [displayValue],
+                                backgroundColor: 'rgba(66, 133, 244, 0.75)'
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: { enabled: true }
+                            },
+                            scales: {
+                                y: { beginAtZero: true, max: max }
+                            }
+                        }
+                    });
+                    currentCharts.push(chart);
+                } catch (e) {
+                    console.warn('Chart creation failed for', key, e);
+                }
+            });
+        }
+        
+        function displayHistoricalResults(data) {
+            const trendData = data.data;
+            const trends = trendData.trends;
+            
+            // Display trend summary
+            const metricsHTML = `
+                <h3 style="font-size: 0.9rem; color: #667eea; margin-bottom: 0.5rem; margin-top: 0;">Historical Trends (${trendData.years[0]}-${trendData.years[trendData.years.length-1]})</h3>
+                <div class="metric">
+                    <span class="metric-label">NDVI Trend</span>
+                    <span class="metric-value">${trends.ndvi.trend} (${trends.ndvi.change > 0 ? '+' : ''}${trends.ndvi.change}%/yr)</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Temperature Trend</span>
+                    <span class="metric-value">${trends.temperature.trend} (${trends.temperature.change > 0 ? '+' : ''}${trends.temperature.change}°C/yr)</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Precipitation Trend</span>
+                    <span class="metric-value">${trends.precipitation.trend} (${trends.precipitation.change > 0 ? '+' : ''}${trends.precipitation.change}mm/yr)</span>
+                </div>
+                
+                <h3 style="font-size: 0.9rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Recent Values</h3>
+                <div class="metric">
+                    <span class="metric-label">Latest NDVI</span>
+                    <span class="metric-value">${trendData.ndvi[trendData.ndvi.length-1] || 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Latest Temperature</span>
+                    <span class="metric-value">${trendData.temperature[trendData.temperature.length-1] ? trendData.temperature[trendData.temperature.length-1] + '°C' : 'N/A'}</span>
+                </div>
+                <div class="metric">
+                    <span class="metric-label">Latest Precipitation</span>
+                    <span class="metric-value">${trendData.precipitation[trendData.precipitation.length-1] ? trendData.precipitation[trendData.precipitation.length-1] + 'mm' : 'N/A'}</span>
+                </div>
+            `;
+            
+            document.getElementById('metrics').innerHTML = metricsHTML;
+            document.getElementById('metricsCard').style.display = 'block';
+            document.getElementById('analyticsSection').style.display = 'grid';
+            
+            // Create historical charts
+            createHistoricalCharts(trendData);
+            
+            // Display real-time trend insights
+            if (data.ai_insights && data.ai_insights.structured_insights) {
+                displayTrendInsights(data.ai_insights.structured_insights);
+            }
+            
+            // Display AI insights if available
+            if (data.ai_insights && data.ai_insights.insights) {
+                document.getElementById('analysis').innerHTML = `
+                    <div class="analysis-text">${data.ai_insights.insights}</div>
+                `;
+                document.getElementById('analysisCard').style.display = 'block';
+            }
+        }
+        
+        function displayTrendInsights(insights) {
+            let insightsHTML = '';
+            
+            // Summary
+            if (insights.summary && insights.summary.length > 0) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #667eea; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            📊 Trend Summary
+                        </h4>
+                        ${insights.summary.map(item => `
+                            <div style="background: #e3f2fd; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;">
+                                ${item}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Positives
+            if (insights.positives && insights.positives.length > 0) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #4caf50; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            ✅ Positive Trends
+                        </h4>
+                        ${insights.positives.map(item => `
+                            <div style="background: #e8f5e9; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;
+                                        border-left: 3px solid #4caf50;">
+                                ${item}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Concerns
+            if (insights.concerns && insights.concerns.length > 0) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #f44336; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            ⚠️ Areas of Concern
+                        </h4>
+                        ${insights.concerns.map(item => `
+                            <div style="background: #ffebee; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;
+                                        border-left: 3px solid #f44336;">
+                                ${item}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Predictions
+            if (insights.predictions && insights.predictions.length > 0) {
+                insightsHTML += `
+                    <div style="margin-bottom: 1rem;">
+                        <h4 style="color: #ff9800; font-size: 0.9rem; margin-bottom: 0.5rem;">
+                            🔮 Future Outlook
+                        </h4>
+                        ${insights.predictions.map(item => `
+                            <div style="background: #fff3e0; padding: 0.5rem 0.75rem; 
+                                        border-radius: 6px; margin-bottom: 0.5rem; font-size: 0.9rem;
+                                        border-left: 3px solid #ff9800;">
+                                ${item}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }
+            
+            // Create insights card
+            const insightsCard = document.createElement('div');
+            insightsCard.className = 'card';
+            insightsCard.id = 'insightsCard';
+            insightsCard.innerHTML = `
+                <h2>💡 Trend Insights</h2>
+                ${insightsHTML}
+            `;
+            
+            // Insert before charts card
+            const chartsCard = document.getElementById('chartsCard');
+            chartsCard.parentNode.insertBefore(insightsCard, chartsCard);
+        }
+        
+        function createHistoricalCharts(trendData) {
+            // Clear existing charts
+            currentCharts.forEach(chart => chart.destroy());
+            currentCharts = [];
+            
+            const chartsHTML = `
+                <canvas id="ndviChart" style="max-height: 250px; margin-bottom: 2rem;"></canvas>
+                <canvas id="tempChart" style="max-height: 250px; margin-bottom: 2rem;"></canvas>
+                <canvas id="precipChart" style="max-height: 250px;"></canvas>
+            `;
+            
+            document.getElementById('charts').innerHTML = chartsHTML;
+            document.getElementById('chartsCard').style.display = 'block';
+            
+            // NDVI Chart
+            const ndviCtx = document.getElementById('ndviChart').getContext('2d');
+            const ndviChart = new Chart(ndviCtx, {
+                type: 'line',
+                data: {
+                    labels: trendData.years,
+                    datasets: [{
+                        label: 'NDVI (Vegetation Health)',
+                        data: trendData.ndvi,
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'NDVI Trend Over Time',
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'NDVI Value'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+            currentCharts.push(ndviChart);
+            
+            // Temperature Chart
+            const tempCtx = document.getElementById('tempChart').getContext('2d');
+            const tempChart = new Chart(tempCtx, {
+                type: 'line',
+                data: {
+                    labels: trendData.years,
+                    datasets: [{
+                        label: 'Temperature (°C)',
+                        data: trendData.temperature,
+                        borderColor: '#ff9800',
+                        backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointHoverRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Temperature Trend Over Time',
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            title: {
+                                display: true,
+                                text: 'Temperature (°C)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+            currentCharts.push(tempChart);
+            
+            // Precipitation Chart
+            const precipCtx = document.getElementById('precipChart').getContext('2d');
+            const precipChart = new Chart(precipCtx, {
+                type: 'bar',
+                data: {
+                    labels: trendData.years,
+                    datasets: [{
+                        label: 'Precipitation (mm)',
+                        data: trendData.precipitation,
+                        backgroundColor: 'rgba(33, 150, 243, 0.7)',
+                        borderColor: '#2196f3',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        title: {
+                            display: true,
+                            text: 'Annual Precipitation',
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Precipitation (mm)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Year'
+                            }
+                        }
+                    }
+                }
+            });
+            currentCharts.push(precipChart);
+        }
+        
+        function displaySeasonalResults(data) {
+            const seasonalData = data.data;
+            const patterns = seasonalData.patterns || {};
+            
+            const metricsHTML = `
+                <h3 style="font-size: 0.9rem; color: #667eea; margin-bottom: 0.5rem; margin-top: 0;">Seasonal Patterns (5-Year Average)</h3>
+                
+                <h4 style="font-size: 0.85rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Key Patterns</h4>
+                ${patterns.vegetation_peak ? `
+                    <div class="metric">
+                        <span class="metric-label">🌱 Vegetation Peak</span>
+                        <span class="metric-value">${patterns.vegetation_peak}</span>
+                    </div>
+                ` : ''}
+                ${patterns.hottest_month ? `
+                    <div class="metric">
+                        <span class="metric-label">🌡️ Hottest Month</span>
+                        <span class="metric-value">${patterns.hottest_month}</span>
+                    </div>
+                ` : ''}
+                ${patterns.wettest_month ? `
+                    <div class="metric">
+                        <span class="metric-label">💧 Wettest Month</span>
+                        <span class="metric-value">${patterns.wettest_month}</span>
+                    </div>
+                ` : ''}
+                ${patterns.driest_month ? `
+                    <div class="metric">
+                        <span class="metric-label">🌵 Driest Month</span>
+                        <span class="metric-value">${patterns.driest_month}</span>
+                    </div>
+                ` : ''}
+                ${patterns.highest_pollution ? `
+                    <div class="metric">
+                        <span class="metric-label">💨 Highest Pollution</span>
+                        <span class="metric-value">${patterns.highest_pollution}</span>
+                    </div>
+                ` : ''}
+            `;
+            
+            document.getElementById('metrics').innerHTML = metricsHTML;
+            document.getElementById('metricsCard').style.display = 'block';
+            document.getElementById('analyticsSection').style.display = 'grid';
+            
+            // Create comprehensive seasonal charts
+            createSeasonalCharts(seasonalData);
+            
+            // Display AI insights
+            if (data.ai_insights && data.ai_insights.insights) {
+                displayDetailedAnalysis(data.ai_insights.insights);
+            }
+        }
+        
+        function createSeasonalCharts(seasonalData) {
+            // Clear existing charts
+            currentCharts.forEach(chart => chart.destroy());
+            currentCharts = [];
+            
+            const chartsHTML = `
+                <canvas id="seasonalVegChart" style="max-height: 250px; margin-bottom: 2rem;"></canvas>
+                <canvas id="seasonalClimateChart" style="max-height: 250px; margin-bottom: 2rem;"></canvas>
+                <canvas id="seasonalAirChart" style="max-height: 250px;"></canvas>
+            `;
+            
+            document.getElementById('charts').innerHTML = chartsHTML;
+            document.getElementById('chartsCard').style.display = 'block';
+            
+            // Vegetation Chart
+            const vegCtx = document.getElementById('seasonalVegChart').getContext('2d');
+            const vegChart = new Chart(vegCtx, {
+                type: 'line',
+                data: {
+                    labels: seasonalData.months,
+                    datasets: [{
+                        label: 'NDVI (Vegetation Health)',
+                        data: seasonalData.ndvi,
+                        borderColor: '#4caf50',
+                        backgroundColor: 'rgba(76, 175, 80, 0.2)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        title: {
+                            display: true,
+                            text: 'Seasonal Vegetation Pattern',
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: false, title: { display: true, text: 'NDVI' } },
+                        x: { title: { display: true, text: 'Month' } }
+                    }
+                }
+            });
+            currentCharts.push(vegChart);
+            
+            // Climate Chart (Temperature & Precipitation)
+            const climateCtx = document.getElementById('seasonalClimateChart').getContext('2d');
+            const climateChart = new Chart(climateCtx, {
+                type: 'line',
+                data: {
+                    labels: seasonalData.months,
+                    datasets: [
+                        {
+                            label: 'Temperature (°C)',
+                            data: seasonalData.temperature,
+                            borderColor: '#ff9800',
+                            backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y',
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'Precipitation (mm)',
+                            data: seasonalData.precipitation,
+                            borderColor: '#2196f3',
+                            backgroundColor: 'rgba(33, 150, 243, 0.1)',
+                            tension: 0.4,
+                            yAxisID: 'y1',
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        title: {
+                            display: true,
+                            text: 'Seasonal Climate Patterns',
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: { display: true, text: 'Temperature (°C)' }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: { display: true, text: 'Precipitation (mm)' },
+                            grid: { drawOnChartArea: false }
+                        },
+                        x: { title: { display: true, text: 'Month' } }
+                    }
+                }
+            });
+            currentCharts.push(climateChart);
+            
+            // Air Quality Chart
+            const airCtx = document.getElementById('seasonalAirChart').getContext('2d');
+            const airChart = new Chart(airCtx, {
+                type: 'line',
+                data: {
+                    labels: seasonalData.months,
+                    datasets: [
+                        {
+                            label: 'CO (×10⁴)',
+                            data: seasonalData.co ? seasonalData.co.map(v => v ? v * 10000 : null) : [],
+                            borderColor: '#f44336',
+                            backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                            tension: 0.4,
+                            pointRadius: 4
+                        },
+                        {
+                            label: 'NO2 (×10⁵)',
+                            data: seasonalData.no2 ? seasonalData.no2.map(v => v ? v * 100000 : null) : [],
+                            borderColor: '#9c27b0',
+                            backgroundColor: 'rgba(156, 39, 176, 0.1)',
+                            tension: 0.4,
+                            pointRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: { display: true, position: 'top' },
+                        title: {
+                            display: true,
+                            text: 'Seasonal Air Quality Patterns',
+                            font: { size: 14, weight: 'bold' }
+                        }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, title: { display: true, text: 'Concentration (scaled)' } },
+                        x: { title: { display: true, text: 'Month' } }
+                    }
+                }
+            });
+            currentCharts.push(airChart);
+        }
+        
+        function showError(message) {
+            const errorHTML = `<div class="error">Error: ${message}</div>`;
+            document.getElementById('analysis').innerHTML = errorHTML;
+            document.getElementById('analysisCard').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

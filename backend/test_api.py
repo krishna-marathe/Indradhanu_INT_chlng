@@ -2,7 +2,7 @@ import requests
 import json
 
 def test_api():
-    print("🧪 Testing Indradhanu Analytics API...")
+    print("🧪 Testing Climate Sphere API...")
     
     # Test home endpoint
     print("\n1️⃣ Testing home endpoint...")

@@ -1,10 +1,10 @@
 """
-Indradhanu Analytics Engine Package
+Climate Sphere Analytics Engine Package
 Dynamic data analysis and visualization toolkit
 """
 
 __version__ = "1.0.0"
-__author__ = "Indradhanu Team"
+__author__ = "Climate Sphere Team"
 
 # Lazy imports to avoid startup delays
 def get_analysis_engine():

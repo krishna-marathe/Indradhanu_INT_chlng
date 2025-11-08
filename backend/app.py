@@ -1,5 +1,5 @@
 """
-Indradhanu Analytics Backend
+Climate Sphere Backend
 Optimized Flask server with fast startup and efficient file serving
 """
 import time
@@ -48,7 +48,7 @@ CORS(app, origins="*", methods=["GET", "POST", "HEAD", "OPTIONS"])
 # Configuration
 UPLOAD_FOLDER = "uploads"
 VISUALS_FOLDER = "visuals"  # Local visuals folder in backend
-ANALYTICS_VISUALS = "../analytics_engine/visuals"  # Analytics engine visuals
+ANALYTICS_VISUALS = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "analytics_engine", "visuals")  # Analytics engine visuals
 
 # Ensure directories exist
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -127,7 +127,7 @@ def safe_json_response(data, status_code=200):
 def home():
     """Health check endpoint"""
     return jsonify({
-        "message": "🌍 Indradhanu Analytics API is running!",
+        "message": "🌍 Climate Sphere API is running!",
         "version": "1.0.0",
         "status": "healthy",
         "timestamp": datetime.now().isoformat()
@@ -761,7 +761,7 @@ def get_current_aqi():
                 'zoom': 10
             }
             geocode_headers = {
-                'User-Agent': 'Indradhanu-Analytics/1.0'
+                'User-Agent': 'Climate-Sphere/1.0'
             }
             geocode_response = requests.get(geocode_url, params=geocode_params, headers=geocode_headers, timeout=5)
             

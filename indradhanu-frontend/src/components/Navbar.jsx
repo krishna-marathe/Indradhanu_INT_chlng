@@ -14,7 +14,7 @@ const Navbar = () => {
           sx={{ flexGrow: 1, cursor: 'pointer' }}
           onClick={() => navigate('/')}
         >
-          🌍 Indradhanu Analytics
+          🌍 Climate Sphere
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button color="inherit" onClick={() => navigate('/')}>
@@ -28,6 +28,9 @@ const Navbar = () => {
           </Button>
           <Button color="inherit" onClick={() => navigate('/weather')}>
             Weather
+          </Button>
+          <Button color="inherit" onClick={() => window.open('http://localhost:8000', '_blank')}>
+            🗺️ Map
           </Button>
           <Button color="inherit" onClick={() => navigate('/chatbot')}>
             🤖 AI Chatbot
