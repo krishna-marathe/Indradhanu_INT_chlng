@@ -289,6 +289,7 @@
                     <option value="current">Current Analysis</option>
                     <option value="historical">Historical Trends (2015-2024)</option>
                     <option value="seasonal">Seasonal Patterns</option>
+                    <option value="forecast">🔮 Environmental Forecast (5 Years)</option>
                 </select>
                 <button id="analyzeBtn" class="btn" style="padding: 0.75rem 2rem;" disabled>
                     Analyze Selected Area
@@ -422,6 +423,9 @@
                 } else if (analysisType === 'seasonal') {
                     endpoint = '/api/seasonal-analysis';
                     requestBody.years = 5;
+                } else if (analysisType === 'forecast') {
+                    endpoint = '/api/predict/comprehensive';
+                    requestBody.years_ahead = 5;
                 }
                 
                 const response = await fetch(endpoint, {
@@ -439,6 +443,8 @@
                         displayHistoricalResults(data);
                     } else if (analysisType === 'seasonal') {
                         displaySeasonalResults(data);
+                    } else if (analysisType === 'forecast') {
+                        displayForecastResults(data);
                     } else {
                         displayResults(data);
                     }
@@ -692,14 +698,19 @@
             // Create current data visualization
             createCurrentDataChart(envData);
             
-            // Display real-time insights
+            // Display real-time insights - PRIORITY: Show first
             if (data.ai_analysis) {
                 displayRealTimeInsights(data.ai_analysis);
             }
             
-            // Display detailed AI analysis
+            // Display detailed AI analysis - Show comprehensive analysis
             if (data.raw_analysis) {
                 displayDetailedAnalysis(data.raw_analysis);
+            }
+            
+            // If no AI analysis, show a message
+            if (!data.ai_analysis && !data.raw_analysis) {
+                console.warn('No AI analysis available in response');
             }
         }
         
@@ -709,14 +720,15 @@
             
             let analysisHTML = '';
             
-            // Executive Summary (highlighted)
+            // Executive Summary (highlighted with AI badge)
             if (sections.summary) {
                 analysisHTML += `
                     <div style="background: linear-gradient(135deg, #667eea20, #764ba220); 
                                 padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;
                                 border-left: 4px solid #667eea;">
-                        <h3 style="margin: 0 0 0.75rem 0; color: #667eea; font-size: 1.1rem;">
-                            📋 Executive Summary
+                        <h3 style="margin: 0 0 0.75rem 0; color: #667eea; font-size: 1.1rem; 
+                                   display: flex; align-items: center;">
+                            📋 Executive Summary ${addLLMBadge()}
                         </h3>
                         <div style="font-size: 1rem; line-height: 1.6; color: #333;">
                             ${sections.summary}
@@ -1019,18 +1031,23 @@
                 `;
             }
             
-            // Create insights card
+            // Create insights card with prominent styling
             const insightsCard = document.createElement('div');
             insightsCard.className = 'card';
             insightsCard.id = 'insightsCard';
+            insightsCard.style.gridColumn = '1 / -1'; // Full width
+            insightsCard.style.background = 'linear-gradient(135deg, #ffffff, #f8f9ff)';
+            insightsCard.style.border = '2px solid #667eea';
             insightsCard.innerHTML = `
-                <h2>💡 Real-Time Insights</h2>
+                <h2 style="display: flex; align-items: center; font-size: 1.3rem;">
+                    💡 Real-Time Insights ${addLLMBadge()}
+                </h2>
                 ${insightsHTML}
             `;
             
-            // Insert before analysis card
-            const analysisCard = document.getElementById('analysisCard');
-            analysisCard.parentNode.insertBefore(insightsCard, analysisCard);
+            // Insert at the beginning of analytics section
+            const analyticsSection = document.getElementById('analyticsSection');
+            analyticsSection.insertBefore(insightsCard, analyticsSection.firstChild);
         }
         
         function createCurrentDataChart(envData) {
@@ -1113,20 +1130,34 @@
             const trendData = data.data;
             const trends = trendData.trends;
             
-            // Display trend summary
+            // Calculate trend indicators
+            const ndviTrendColor = trends.ndvi.trend === 'increasing' ? '#4caf50' : 
+                                  trends.ndvi.trend === 'decreasing' ? '#f44336' : '#ff9800';
+            const tempTrendColor = trends.temperature.trend === 'warming' ? '#f44336' : 
+                                  trends.temperature.trend === 'cooling' ? '#2196f3' : '#ff9800';
+            const precipTrendColor = trends.precipitation.trend === 'increasing' ? '#2196f3' : 
+                                    trends.precipitation.trend === 'decreasing' ? '#ff9800' : '#9e9e9e';
+            
+            // Display trend summary with visual indicators
             const metricsHTML = `
                 <h3 style="font-size: 0.9rem; color: #667eea; margin-bottom: 0.5rem; margin-top: 0;">Historical Trends (${trendData.years[0]}-${trendData.years[trendData.years.length-1]})</h3>
-                <div class="metric">
-                    <span class="metric-label">NDVI Trend</span>
-                    <span class="metric-value">${trends.ndvi.trend} (${trends.ndvi.change > 0 ? '+' : ''}${trends.ndvi.change}%/yr)</span>
+                <div class="metric" style="background: ${ndviTrendColor}15; padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
+                    <span class="metric-label">🌱 NDVI Trend</span>
+                    <span class="metric-value" style="color: ${ndviTrendColor}; font-weight: bold;">
+                        ${trends.ndvi.trend.toUpperCase()} (${trends.ndvi.change > 0 ? '+' : ''}${trends.ndvi.change}%/yr)
+                    </span>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Temperature Trend</span>
-                    <span class="metric-value">${trends.temperature.trend} (${trends.temperature.change > 0 ? '+' : ''}${trends.temperature.change}°C/yr)</span>
+                <div class="metric" style="background: ${tempTrendColor}15; padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
+                    <span class="metric-label">🌡️ Temperature Trend</span>
+                    <span class="metric-value" style="color: ${tempTrendColor}; font-weight: bold;">
+                        ${trends.temperature.trend.toUpperCase()} (${trends.temperature.change > 0 ? '+' : ''}${trends.temperature.change}°C/yr)
+                    </span>
                 </div>
-                <div class="metric">
-                    <span class="metric-label">Precipitation Trend</span>
-                    <span class="metric-value">${trends.precipitation.trend} (${trends.precipitation.change > 0 ? '+' : ''}${trends.precipitation.change}mm/yr)</span>
+                <div class="metric" style="background: ${precipTrendColor}15; padding: 0.75rem; border-radius: 6px; margin-bottom: 0.5rem;">
+                    <span class="metric-label">💧 Precipitation Trend</span>
+                    <span class="metric-value" style="color: ${precipTrendColor}; font-weight: bold;">
+                        ${trends.precipitation.trend.toUpperCase()} (${trends.precipitation.change > 0 ? '+' : ''}${trends.precipitation.change}mm/yr)
+                    </span>
                 </div>
                 
                 <h3 style="font-size: 0.9rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Recent Values</h3>
@@ -1151,17 +1182,14 @@
             // Create historical charts
             createHistoricalCharts(trendData);
             
-            // Display real-time trend insights
+            // Display real-time trend insights - ALWAYS SHOW
             if (data.ai_insights && data.ai_insights.structured_insights) {
                 displayTrendInsights(data.ai_insights.structured_insights);
             }
             
-            // Display AI insights if available
+            // Display detailed AI analysis - ALWAYS SHOW
             if (data.ai_insights && data.ai_insights.insights) {
-                document.getElementById('analysis').innerHTML = `
-                    <div class="analysis-text">${data.ai_insights.insights}</div>
-                `;
-                document.getElementById('analysisCard').style.display = 'block';
+                displayDetailedAnalysis(data.ai_insights.insights);
             }
         }
         
@@ -1239,18 +1267,23 @@
                 `;
             }
             
-            // Create insights card
+            // Create insights card with prominent styling
             const insightsCard = document.createElement('div');
             insightsCard.className = 'card';
             insightsCard.id = 'insightsCard';
+            insightsCard.style.gridColumn = '1 / -1'; // Full width
+            insightsCard.style.background = 'linear-gradient(135deg, #ffffff, #f8f9ff)';
+            insightsCard.style.border = '2px solid #667eea';
             insightsCard.innerHTML = `
-                <h2>💡 Trend Insights</h2>
+                <h2 style="display: flex; align-items: center; font-size: 1.3rem;">
+                    💡 Trend Insights ${addLLMBadge()}
+                </h2>
                 ${insightsHTML}
             `;
             
-            // Insert before charts card
-            const chartsCard = document.getElementById('chartsCard');
-            chartsCard.parentNode.insertBefore(insightsCard, chartsCard);
+            // Insert at the beginning of analytics section
+            const analyticsSection = document.getElementById('analyticsSection');
+            analyticsSection.insertBefore(insightsCard, analyticsSection.firstChild);
         }
         
         function createHistoricalCharts(trendData) {
@@ -1424,33 +1457,39 @@
                 
                 <h4 style="font-size: 0.85rem; color: #667eea; margin: 1rem 0 0.5rem 0;">Key Patterns</h4>
                 ${patterns.vegetation_peak ? `
-                    <div class="metric">
+                    <div class="metric" style="background: #e8f5e915; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem;">
                         <span class="metric-label">🌱 Vegetation Peak</span>
-                        <span class="metric-value">${patterns.vegetation_peak}</span>
+                        <span class="metric-value" style="color: #4caf50; font-weight: bold;">${patterns.vegetation_peak}</span>
+                    </div>
+                ` : ''}
+                ${patterns.vegetation_low ? `
+                    <div class="metric" style="background: #fff3e015; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem;">
+                        <span class="metric-label">🍂 Vegetation Low</span>
+                        <span class="metric-value" style="color: #ff9800; font-weight: bold;">${patterns.vegetation_low}</span>
                     </div>
                 ` : ''}
                 ${patterns.hottest_month ? `
-                    <div class="metric">
+                    <div class="metric" style="background: #ffebee15; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem;">
                         <span class="metric-label">🌡️ Hottest Month</span>
-                        <span class="metric-value">${patterns.hottest_month}</span>
+                        <span class="metric-value" style="color: #f44336; font-weight: bold;">${patterns.hottest_month}</span>
                     </div>
                 ` : ''}
                 ${patterns.wettest_month ? `
-                    <div class="metric">
+                    <div class="metric" style="background: #e3f2fd15; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem;">
                         <span class="metric-label">💧 Wettest Month</span>
-                        <span class="metric-value">${patterns.wettest_month}</span>
+                        <span class="metric-value" style="color: #2196f3; font-weight: bold;">${patterns.wettest_month}</span>
                     </div>
                 ` : ''}
                 ${patterns.driest_month ? `
-                    <div class="metric">
+                    <div class="metric" style="background: #fff3e015; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem;">
                         <span class="metric-label">🌵 Driest Month</span>
-                        <span class="metric-value">${patterns.driest_month}</span>
+                        <span class="metric-value" style="color: #ff9800; font-weight: bold;">${patterns.driest_month}</span>
                     </div>
                 ` : ''}
                 ${patterns.highest_pollution ? `
-                    <div class="metric">
+                    <div class="metric" style="background: #f3e5f515; padding: 0.5rem; border-radius: 6px; margin-bottom: 0.5rem;">
                         <span class="metric-label">💨 Highest Pollution</span>
-                        <span class="metric-value">${patterns.highest_pollution}</span>
+                        <span class="metric-value" style="color: #9c27b0; font-weight: bold;">${patterns.highest_pollution}</span>
                     </div>
                 ` : ''}
             `;
@@ -1462,7 +1501,7 @@
             // Create comprehensive seasonal charts
             createSeasonalCharts(seasonalData);
             
-            // Display AI insights
+            // Display comprehensive AI insights - ALWAYS SHOW
             if (data.ai_insights && data.ai_insights.insights) {
                 displayDetailedAnalysis(data.ai_insights.insights);
             }
@@ -1621,10 +1660,405 @@
             currentCharts.push(airChart);
         }
         
+        function displayForecastResults(data) {
+            if (!data.success || !data.predictions) {
+                showError('Forecast generation failed');
+                return;
+            }
+            
+            const predictions = data.predictions;
+            const summary = data.summary;
+            
+            // Display forecast metrics
+            let metricsHTML = `
+                <h3 style="font-size: 1rem; color: #667eea; margin-bottom: 1rem; margin-top: 0;">
+                    🔮 Environmental Forecast (${data.prediction_horizon} Years Ahead)
+                </h3>
+            `;
+            
+            // NDVI Forecast
+            if (predictions.ndvi && predictions.ndvi.success) {
+                const ndvi = predictions.ndvi;
+                const trendColor = ndvi.trend_analysis.trend === 'improving' ? '#4caf50' : 
+                                  ndvi.trend_analysis.trend === 'declining' ? '#f44336' : '#ff9800';
+                
+                metricsHTML += `
+                    <div style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); 
+                                padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+                                border-left: 4px solid ${trendColor};">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #2e7d32; font-size: 0.95rem;">
+                            🌱 Vegetation Health (NDVI)
+                        </h4>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Current Value</span>
+                            <span class="metric-value">${ndvi.current_value}</span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Predicted (5 years)</span>
+                            <span class="metric-value" style="color: ${trendColor}; font-weight: bold;">
+                                ${ndvi.predicted_value_5y || 'N/A'}
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Trend</span>
+                            <span class="metric-value" style="color: ${trendColor}; text-transform: uppercase;">
+                                ${ndvi.trend_analysis.trend}
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Confidence</span>
+                            <span class="metric-value">${ndvi.trend_analysis.confidence.toUpperCase()} (R²: ${ndvi.trend_analysis.r_squared})</span>
+                        </div>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #555; font-style: italic;">
+                            ${ndvi.trend_analysis.description}
+                        </p>
+                    </div>
+                `;
+            }
+            
+            // Temperature Forecast
+            if (predictions.temperature && predictions.temperature.success) {
+                const temp = predictions.temperature;
+                const trendColor = temp.trend_analysis.trend === 'warming' ? '#f44336' : 
+                                  temp.trend_analysis.trend === 'cooling' ? '#2196f3' : '#ff9800';
+                
+                metricsHTML += `
+                    <div style="background: linear-gradient(135deg, #ffebee, #ffcdd2); 
+                                padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+                                border-left: 4px solid ${trendColor};">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #c62828; font-size: 0.95rem;">
+                            🌡️ Temperature Trend
+                        </h4>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Current Temperature</span>
+                            <span class="metric-value">${temp.current_value}°C</span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Predicted (5 years)</span>
+                            <span class="metric-value" style="color: ${trendColor}; font-weight: bold;">
+                                ${temp.predicted_value_5y}°C
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Total Change</span>
+                            <span class="metric-value" style="color: ${trendColor};">
+                                ${temp.total_change_predicted > 0 ? '+' : ''}${temp.total_change_predicted}°C
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Trend</span>
+                            <span class="metric-value" style="color: ${trendColor}; text-transform: uppercase;">
+                                ${temp.trend_analysis.trend}
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Confidence</span>
+                            <span class="metric-value">${temp.trend_analysis.confidence.toUpperCase()} (R²: ${temp.trend_analysis.r_squared})</span>
+                        </div>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #555; font-style: italic;">
+                            ${temp.trend_analysis.description}
+                        </p>
+                    </div>
+                `;
+            }
+            
+            // Precipitation Forecast
+            if (predictions.precipitation && predictions.precipitation.success) {
+                const precip = predictions.precipitation;
+                const trendColor = precip.trend_analysis.trend === 'increasing' ? '#2196f3' : 
+                                  precip.trend_analysis.trend === 'decreasing' ? '#ff9800' : '#9e9e9e';
+                const droughtColor = precip.drought_risk === 'high' ? '#f44336' : 
+                                    precip.drought_risk === 'moderate' ? '#ff9800' : '#4caf50';
+                
+                metricsHTML += `
+                    <div style="background: linear-gradient(135deg, #e3f2fd, #bbdefb); 
+                                padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+                                border-left: 4px solid ${trendColor};">
+                        <h4 style="margin: 0 0 0.5rem 0; color: #1565c0; font-size: 0.95rem;">
+                            🌧️ Precipitation Forecast
+                        </h4>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Current Annual Rainfall</span>
+                            <span class="metric-value">${precip.current_value} mm/year</span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Predicted (5 years)</span>
+                            <span class="metric-value" style="color: ${trendColor}; font-weight: bold;">
+                                ${precip.predicted_value_5y} mm/year
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Trend</span>
+                            <span class="metric-value" style="color: ${trendColor}; text-transform: uppercase;">
+                                ${precip.trend_analysis.trend}
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Drought Risk</span>
+                            <span class="metric-value" style="color: ${droughtColor}; font-weight: bold; text-transform: uppercase;">
+                                ${precip.drought_risk}
+                            </span>
+                        </div>
+                        <div class="metric" style="border: none; padding: 0.25rem 0;">
+                            <span class="metric-label">Confidence</span>
+                            <span class="metric-value">${precip.trend_analysis.confidence.toUpperCase()} (R²: ${precip.trend_analysis.r_squared})</span>
+                        </div>
+                        <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #555; font-style: italic;">
+                            ${precip.trend_analysis.description}
+                        </p>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('metrics').innerHTML = metricsHTML;
+            document.getElementById('metricsCard').style.display = 'block';
+            document.getElementById('analyticsSection').style.display = 'grid';
+            
+            // Display comprehensive summary and risk assessment with LLM insights
+            if (summary) {
+                let summaryHTML = `
+                    <div style="background: linear-gradient(135deg, #667eea20, #764ba220); 
+                                padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;
+                                border-left: 4px solid #667eea;">
+                        <h3 style="margin: 0 0 1rem 0; color: #667eea; font-size: 1.1rem;">
+                            📋 AI-Powered Forecast Summary
+                        </h3>
+                        <p style="margin: 0 0 0.5rem 0; color: #666;">
+                            <strong>Parameters Predicted:</strong> ${summary.parameters_predicted}
+                        </p>
+                        <p style="margin: 0.5rem 0 0 0; color: #666; font-size: 0.9rem;">
+                            <em>Based on ${predictions.ndvi?.historical_data?.years?.length || 10} years of historical data analysis</em>
+                        </p>
+                `;
+                
+                if (summary.key_findings && summary.key_findings.length > 0) {
+                    summaryHTML += `
+                        <h4 style="margin: 1rem 0 0.5rem 0; color: #667eea; font-size: 0.95rem;">
+                            🔍 Key Findings:
+                        </h4>
+                        ${summary.key_findings.map(finding => `
+                            <div style="background: white; padding: 0.75rem; border-radius: 6px; 
+                                        margin-bottom: 0.5rem; border-left: 3px solid #667eea;">
+                                ${finding}
+                            </div>
+                        `).join('')}
+                    `;
+                }
+                
+                if (summary.risk_assessment && Object.keys(summary.risk_assessment).length > 0) {
+                    summaryHTML += `
+                        <h4 style="margin: 1rem 0 0.5rem 0; color: #f44336; font-size: 0.95rem;">
+                            ⚠️ Risk Assessment:
+                        </h4>
+                    `;
+                    
+                    Object.entries(summary.risk_assessment).forEach(([risk, level]) => {
+                        const riskColor = level === 'high' ? '#f44336' : 
+                                        level === 'moderate' ? '#ff9800' : '#4caf50';
+                        const riskIcon = level === 'high' ? '🚨' : level === 'moderate' ? '⚠️' : '✅';
+                        summaryHTML += `
+                            <div style="background: ${riskColor}15; padding: 0.75rem; border-radius: 6px; 
+                                        margin-bottom: 0.5rem; border-left: 3px solid ${riskColor};">
+                                <div class="metric" style="border: none; padding: 0;">
+                                    <span class="metric-label">${riskIcon} ${risk.replace(/_/g, ' ').toUpperCase()}</span>
+                                    <span class="metric-value" style="color: ${riskColor}; font-weight: bold; text-transform: uppercase;">
+                                        ${level}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                
+                // Add actionable recommendations
+                summaryHTML += `
+                    <h4 style="margin: 1rem 0 0.5rem 0; color: #4caf50; font-size: 0.95rem;">
+                        💡 Recommended Actions:
+                    </h4>
+                    <div style="background: white; padding: 0.75rem; border-radius: 6px; 
+                                margin-bottom: 0.5rem; border-left: 3px solid #4caf50;">
+                        Monitor these trends closely and prepare adaptation strategies based on predicted changes.
+                    </div>
+                `;
+                
+                summaryHTML += '</div>';
+                
+                document.getElementById('analysis').innerHTML = summaryHTML;
+                document.getElementById('analysisCard').style.display = 'block';
+            }
+            
+            // Create forecast charts
+            createForecastCharts(predictions);
+        }
+        
+        function createForecastCharts(predictions) {
+            const chartsContainer = document.getElementById('charts');
+            chartsContainer.innerHTML = '';
+            
+            // Clear existing charts
+            currentCharts.forEach(chart => chart.destroy());
+            currentCharts = [];
+            
+            // Create canvas elements for each prediction
+            if (predictions.ndvi && predictions.ndvi.success) {
+                const canvas = document.createElement('canvas');
+                canvas.id = 'ndviForecastChart';
+                canvas.style.marginBottom = '2rem';
+                chartsContainer.appendChild(canvas);
+                
+                const ndviChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: [...predictions.ndvi.historical_data.years, ...predictions.ndvi.predictions.years],
+                        datasets: [
+                            {
+                                label: 'Historical NDVI',
+                                data: [...predictions.ndvi.historical_data.values, ...Array(predictions.ndvi.predictions.years.length).fill(null)],
+                                borderColor: '#4caf50',
+                                backgroundColor: 'rgba(76, 175, 80, 0.1)',
+                                tension: 0.4,
+                                pointRadius: 4
+                            },
+                            {
+                                label: 'Predicted NDVI',
+                                data: [...Array(predictions.ndvi.historical_data.years.length).fill(null), ...predictions.ndvi.predictions.values],
+                                borderColor: '#ff9800',
+                                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                borderDash: [5, 5],
+                                tension: 0.4,
+                                pointRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            title: {
+                                display: true,
+                                text: '🌱 NDVI Forecast (Vegetation Health)',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'NDVI Value' } },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+                currentCharts.push(ndviChart);
+            }
+            
+            if (predictions.temperature && predictions.temperature.success) {
+                const canvas = document.createElement('canvas');
+                canvas.id = 'tempForecastChart';
+                canvas.style.marginBottom = '2rem';
+                chartsContainer.appendChild(canvas);
+                
+                const tempChart = new Chart(canvas, {
+                    type: 'line',
+                    data: {
+                        labels: [...predictions.temperature.historical_data.years, ...predictions.temperature.predictions.years],
+                        datasets: [
+                            {
+                                label: 'Historical Temperature',
+                                data: [...predictions.temperature.historical_data.values, ...Array(predictions.temperature.predictions.years.length).fill(null)],
+                                borderColor: '#f44336',
+                                backgroundColor: 'rgba(244, 67, 54, 0.1)',
+                                tension: 0.4,
+                                pointRadius: 4
+                            },
+                            {
+                                label: 'Predicted Temperature',
+                                data: [...Array(predictions.temperature.historical_data.years.length).fill(null), ...predictions.temperature.predictions.values],
+                                borderColor: '#ff9800',
+                                backgroundColor: 'rgba(255, 152, 0, 0.1)',
+                                borderDash: [5, 5],
+                                tension: 0.4,
+                                pointRadius: 4
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            title: {
+                                display: true,
+                                text: '🌡️ Temperature Forecast',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'Temperature (°C)' } },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+                currentCharts.push(tempChart);
+            }
+            
+            if (predictions.precipitation && predictions.precipitation.success) {
+                const canvas = document.createElement('canvas');
+                canvas.id = 'precipForecastChart';
+                chartsContainer.appendChild(canvas);
+                
+                const precipChart = new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: [...predictions.precipitation.historical_data.years, ...predictions.precipitation.predictions.years],
+                        datasets: [
+                            {
+                                label: 'Historical Precipitation',
+                                data: [...predictions.precipitation.historical_data.values, ...Array(predictions.precipitation.predictions.years.length).fill(null)],
+                                backgroundColor: 'rgba(33, 150, 243, 0.6)',
+                                borderColor: '#2196f3',
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Predicted Precipitation',
+                                data: [...Array(predictions.precipitation.historical_data.years.length).fill(null), ...predictions.precipitation.predictions.values],
+                                backgroundColor: 'rgba(255, 152, 0, 0.6)',
+                                borderColor: '#ff9800',
+                                borderWidth: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: true, position: 'top' },
+                            title: {
+                                display: true,
+                                text: '🌧️ Precipitation Forecast',
+                                font: { size: 14, weight: 'bold' }
+                            }
+                        },
+                        scales: {
+                            y: { title: { display: true, text: 'Precipitation (mm/year)' }, beginAtZero: true },
+                            x: { title: { display: true, text: 'Year' } }
+                        }
+                    }
+                });
+                currentCharts.push(precipChart);
+            }
+            
+            document.getElementById('chartsCard').style.display = 'block';
+        }
+        
         function showError(message) {
-            const errorHTML = `<div class="error">Error: ${message}</div>`;
+            const errorHTML = `<div class="error">❌ Error: ${message}</div>`;
             document.getElementById('analysis').innerHTML = errorHTML;
             document.getElementById('analysisCard').style.display = 'block';
+        }
+        
+        // Add visual indicator for LLM-powered insights
+        function addLLMBadge() {
+            return `<span style="background: linear-gradient(135deg, #667eea, #764ba2); 
+                           color: white; padding: 0.25rem 0.75rem; border-radius: 12px; 
+                           font-size: 0.75rem; font-weight: 600; margin-left: 0.5rem;">
+                        🤖 AI-POWERED
+                    </span>`;
         }
     </script>
 </body>

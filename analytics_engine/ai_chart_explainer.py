@@ -13,8 +13,8 @@ class AIChartExplainer:
     """Generate AI-powered explanations for charts and visualizations"""
     
     def __init__(self):
-        self.api_key = os.getenv('REACT_APP_GEMINI_API_KEY', 'AIzaSyA4IX7we2BPAuvKTRgHZjf1E1zomexttBM')
-        self.api_url = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent'
+        self.api_key = os.getenv('GEMINI_API_KEY', os.getenv('REACT_APP_GEMINI_API_KEY', 'AIzaSyA4IX7we2BPAuvKTRgHZjf1E1zomexttBM'))
+        self.api_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent'
     
     def explain_chart(self, chart_info: Dict[str, Any], data_summary: Dict[str, Any]) -> str:
         """

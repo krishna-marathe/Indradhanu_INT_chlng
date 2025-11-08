@@ -45,6 +45,7 @@ const WeatherDashboard = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [popularLocations, setPopularLocations] = useState([]);
   const [selectedLocation, setSelectedLocation] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(true);
 
   const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000';
 
@@ -91,18 +92,34 @@ const WeatherDashboard = () => {
 
   const getCurrentLocation = () => {
     if (navigator.geolocation) {
+      setLocationLoading(true);
+      setError(null);
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setCoordinates({
+          const newCoords = {
             latitude: position.coords.latitude,
             longitude: position.coords.longitude
+          };
+          setCoordinates(newCoords);
+          setSelectedLocation({
+            name: 'Current Location',
+            clean_name: 'Your Current Location',
+            latitude: newCoords.latitude,
+            longitude: newCoords.longitude
           });
-          setSelectedLocation(null);
-          setLocationSearch('');
+          setLocationSearch('Your Current Location');
+          setLocationLoading(false);
+          console.log('📍 Location updated:', newCoords);
         },
         (error) => {
           console.error('Geolocation error:', error);
-          setError('Unable to get current location');
+          setError('Unable to get current location. Please check your browser permissions.');
+          setLocationLoading(false);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
         }
       );
     } else {
@@ -154,9 +171,43 @@ const WeatherDashboard = () => {
     handleLocationSelect(location);
   };
 
-  // Load popular locations on component mount
+  // Load popular locations and auto-fetch current location on component mount
   useEffect(() => {
     loadPopularLocations();
+    
+    // Automatically get current location on page load
+    setLocationLoading(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const newCoords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude
+          };
+          setCoordinates(newCoords);
+          setSelectedLocation({
+            name: 'Current Location',
+            clean_name: 'Your Current Location',
+            latitude: newCoords.latitude,
+            longitude: newCoords.longitude
+          });
+          setLocationLoading(false);
+          console.log('📍 Auto-detected location:', newCoords);
+        },
+        (error) => {
+          console.log('Geolocation not available, using default location');
+          setLocationLoading(false);
+          // Keep default Berlin coordinates if geolocation fails
+        },
+        {
+          enableHighAccuracy: false,
+          timeout: 5000,
+          maximumAge: 0
+        }
+      );
+    } else {
+      setLocationLoading(false);
+    }
   }, []);
 
   const formatTimestamp = (timestamp) => {
@@ -195,10 +246,21 @@ const WeatherDashboard = () => {
 
       {/* Location Input */}
       <Paper sx={{ p: 3, mb: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          <LocationIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-          Location Settings
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+          <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <LocationIcon />
+            Location Settings
+          </Typography>
+          {locationLoading && (
+            <Chip 
+              icon={<CircularProgress size={16} />} 
+              label="Detecting location..." 
+              size="small" 
+              color="primary"
+              variant="outlined"
+            />
+          )}
+        </Box>
         
         {/* Location Search */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
@@ -341,9 +403,13 @@ const WeatherDashboard = () => {
 
         {/* Selected Location Display */}
         {selectedLocation && (
-          <Alert severity="info" sx={{ mt: 2 }}>
+          <Alert 
+            severity={selectedLocation.name === 'Current Location' ? 'success' : 'info'} 
+            sx={{ mt: 2 }}
+            icon={selectedLocation.name === 'Current Location' ? <LocationIcon /> : undefined}
+          >
             <Typography variant="body2">
-              <strong>Selected:</strong> {selectedLocation.clean_name} 
+              <strong>{selectedLocation.name === 'Current Location' ? '📍 Auto-detected:' : 'Selected:'}</strong> {selectedLocation.clean_name} 
               ({selectedLocation.latitude?.toFixed(4)}°, {selectedLocation.longitude?.toFixed(4)}°)
             </Typography>
           </Alert>

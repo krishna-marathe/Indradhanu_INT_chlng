@@ -23,7 +23,7 @@ const Chatbot = () => {
   const messagesEndRef = useRef(null);
 
   const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY || 'AIzaSyA4IX7we2BPAuvKTRgHZjf1E1zomexttBM';
-  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent';
+  const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent';
 
   // Suggested questions for different user types
   const suggestedQuestions = [
@@ -49,10 +49,14 @@ const Chatbot = () => {
 
     try {
       // Enhanced prompt for climate-focused responses
-      const prompt = `You are an AI Climate Expert Assistant for the Climate Sphere Intelligence Platform. 
-Provide clear, data-driven insights on weather, crops, environmental conditions, climate trends, and disaster preparedness.
-Keep your answers concise, factual, and user-friendly. Use bullet points when listing multiple items.
-Focus on Indian climate context when relevant.
+      const prompt = `You are a Climate Intelligence AI Assistant. Your role is strictly limited to climate, weather, environment, agriculture, and disaster-related topics.
+
+STRICT RULES:
+1. ONLY answer questions about: climate, weather, temperature, rainfall, crops, agriculture, environmental conditions, natural disasters, air quality, water resources, seasons, and related topics
+2. If asked about non-climate topics (politics, entertainment, general knowledge, etc.), politely redirect: "I'm specialized in climate and environmental topics. Please ask me about weather, agriculture, or environmental conditions."
+3. Keep responses SHORT and PRECISE (2-4 sentences max, or 3-5 bullet points)
+4. Be factual and data-driven
+5. Focus on Indian climate context when relevant
 
 User question: ${question}`;
 

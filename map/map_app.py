@@ -5,6 +5,7 @@ Interactive map selection and AI-powered insights
 from flask import Flask, render_template, request, jsonify
 from llm_analyzer import LLMAnalyzer
 from gee_processor import GEEProcessor
+from gee_predictor import GEEPredictor
 import os
 from dotenv import load_dotenv
 
@@ -15,12 +16,17 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-pro
 
 # Initialize processors
 gee_processor = None
+gee_predictor = None
 llm_analyzer = None
 
 try:
     print("Initializing GEE Processor...")
     gee_processor = GEEProcessor()
     print("✓ GEE Processor initialized")
+    
+    print("Initializing GEE Predictor...")
+    gee_predictor = GEEPredictor(gee_processor)
+    print("✓ GEE Predictor initialized")
 except Exception as e:
     print(f"✗ GEE Initialization error: {e}")
     import traceback
@@ -35,7 +41,7 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
-if gee_processor and llm_analyzer:
+if gee_processor and gee_predictor and llm_analyzer:
     print("✓ All processors initialized successfully")
 else:
     print("⚠ Warning: Some processors failed to initialize")
@@ -380,12 +386,175 @@ def get_heatmap_tiles():
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/predict/comprehensive', methods=['POST'])
+def predict_comprehensive():
+    """
+    Generate comprehensive environmental predictions
+    
+    Expected JSON:
+    {
+        "geometry": {...},
+        "years_ahead": 5
+    }
+    """
+    try:
+        data = request.get_json()
+        geometry = data.get('geometry')
+        years_ahead = data.get('years_ahead', 5)
+        
+        if not geometry:
+            return jsonify({
+                'success': False,
+                'error': 'No geometry provided'
+            }), 400
+        
+        if not gee_predictor:
+            return jsonify({
+                'success': False,
+                'error': 'GEE predictor not initialized'
+            }), 500
+        
+        # Generate predictions
+        predictions = gee_predictor.predict_comprehensive(geometry, years_ahead)
+        
+        return jsonify(predictions)
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/predict/ndvi', methods=['POST'])
+def predict_ndvi():
+    """
+    Predict NDVI (vegetation health) trends
+    
+    Expected JSON:
+    {
+        "geometry": {...},
+        "years_ahead": 5,
+        "historical_years": 10
+    }
+    """
+    try:
+        data = request.get_json()
+        geometry = data.get('geometry')
+        years_ahead = data.get('years_ahead', 5)
+        historical_years = data.get('historical_years', 10)
+        
+        if not geometry:
+            return jsonify({
+                'success': False,
+                'error': 'No geometry provided'
+            }), 400
+        
+        if not gee_predictor:
+            return jsonify({
+                'success': False,
+                'error': 'GEE predictor not initialized'
+            }), 500
+        
+        # Generate NDVI prediction
+        prediction = gee_predictor.predict_ndvi_trend(geometry, years_ahead, historical_years)
+        
+        return jsonify(prediction)
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/predict/temperature', methods=['POST'])
+def predict_temperature():
+    """
+    Predict temperature trends
+    
+    Expected JSON:
+    {
+        "geometry": {...},
+        "years_ahead": 5,
+        "historical_years": 10
+    }
+    """
+    try:
+        data = request.get_json()
+        geometry = data.get('geometry')
+        years_ahead = data.get('years_ahead', 5)
+        historical_years = data.get('historical_years', 10)
+        
+        if not geometry:
+            return jsonify({
+                'success': False,
+                'error': 'No geometry provided'
+            }), 400
+        
+        if not gee_predictor:
+            return jsonify({
+                'success': False,
+                'error': 'GEE predictor not initialized'
+            }), 500
+        
+        # Generate temperature prediction
+        prediction = gee_predictor.predict_temperature_trend(geometry, years_ahead, historical_years)
+        
+        return jsonify(prediction)
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/api/predict/precipitation', methods=['POST'])
+def predict_precipitation():
+    """
+    Predict precipitation trends
+    
+    Expected JSON:
+    {
+        "geometry": {...},
+        "years_ahead": 5,
+        "historical_years": 10
+    }
+    """
+    try:
+        data = request.get_json()
+        geometry = data.get('geometry')
+        years_ahead = data.get('years_ahead', 5)
+        historical_years = data.get('historical_years', 10)
+        
+        if not geometry:
+            return jsonify({
+                'success': False,
+                'error': 'No geometry provided'
+            }), 400
+        
+        if not gee_predictor:
+            return jsonify({
+                'success': False,
+                'error': 'GEE predictor not initialized'
+            }), 500
+        
+        # Generate precipitation prediction
+        prediction = gee_predictor.predict_precipitation_trend(geometry, years_ahead, historical_years)
+        
+        return jsonify(prediction)
+    
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({
         'status': 'healthy',
         'gee_initialized': gee_processor is not None,
+        'gee_predictor_initialized': gee_predictor is not None,
         'llm_initialized': llm_analyzer is not None
     })
 
